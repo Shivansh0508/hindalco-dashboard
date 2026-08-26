@@ -5609,13 +5609,15 @@ button {
 .exception-row {
   display: grid;
 
-  /* MANUAL and PL2P share one column now, as a paired bar */
+  /* MANUAL and PL2P share one column now, as a paired bar.
+     The last minimum carries "NOT IN MANUAL REGISTER" in caps,
+     which measures about 170px. */
   grid-template-columns:
     minmax(170px, 1.2fr)
     80px
     232px
     120px
-    minmax(140px, 1fr);
+    minmax(178px, 1fr);
 
   align-items: center;
 
@@ -5936,62 +5938,83 @@ button {
 ========================================================= */
 
 /*
-   Status as a pill rather than bare text, so state is legible
-   without reading the words — the dot carries the colour and the
-   label says which state it is, never colour alone.
+   A routing tag rather than a pill: square, one corner sliced off,
+   and a solid colour-coded edge down the left. The leading dot is
+   gone — the edge already carries the colour, and a dot beside a
+   coloured bar was saying the same thing twice.
+
+   The label still spells the state out, so colour is never the only
+   thing carrying it.
 */
 .pill {
   display: inline-flex;
 
   align-items: center;
 
-  gap: 6px;
+  padding: 5px 11px 5px 9px;
 
-  padding: 4px 11px;
+  border-radius: 0;
 
-  border-radius: 12px;
+  /*
+     Full strength on the edge, softer for the label. Inheriting
+     currentColor made the edge as pale as the text and the tag
+     lost the thing that makes it read as a tag.
+
+     Longhands, not the shorthand: a var() that fails to resolve
+     invalidates the whole declaration it sits in, which would take
+     the width and style down with the colour.
+  */
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: var(--edge, currentColor);
+
+  /* 7px off the top-right corner, which is what stops this reading
+     as one more rounded chip */
+  clip-path:
+    polygon(
+      0 0,
+      calc(100% - 7px) 0,
+      100% 7px,
+      100% 100%,
+      0 100%
+    );
 
   font-style: normal;
   font-size: 10px;
   font-weight: 700;
 
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+
+  text-transform: uppercase;
 
   white-space: nowrap;
 }
 
-.pill::before {
-  content: "";
-
-  width: 5px;
-  height: 5px;
-
-  border-radius: 50%;
-
-  background: currentColor;
-
-  flex-shrink: 0;
-}
-
 .pill-bad {
-  background:
-    rgba(227, 73, 72, 0.16);
+  --edge: #e34948;
 
-  color: #f0908f;
+  background:
+    rgba(227, 73, 72, 0.13);
+
+  color: #f2a0a0;
 }
 
 .pill-warn {
-  background:
-    rgba(226, 184, 59, 0.15);
+  --edge: #e2b83b;
 
-  color: #e2b83b;
+  background:
+    rgba(226, 184, 59, 0.12);
+
+  color: #e6c877;
 }
 
 .pill-ok {
-  background:
-    rgba(47, 211, 155, 0.13);
+  --edge: #2fd39b;
 
-  color: #55d9a6;
+  background:
+    rgba(47, 211, 155, 0.11);
+
+  color: #74e0b8;
 }
 
 /* ---- manual against PL2P ---- */
@@ -7075,26 +7098,32 @@ button {
 
 .dashboard-page.light-mode
 .pill-bad {
-  background:
-    rgba(192, 51, 47, 0.12);
+  --edge: #c0332f;
 
-  color: #b4302c;
+  background:
+    rgba(192, 51, 47, 0.10);
+
+  color: #a52c28;
 }
 
 .dashboard-page.light-mode
 .pill-warn {
-  background:
-    rgba(146, 113, 39, 0.14);
+  --edge: #a9862a;
 
-  color: #7d6021;
+  background:
+    rgba(146, 113, 39, 0.12);
+
+  color: #74591e;
 }
 
 .dashboard-page.light-mode
 .pill-ok {
-  background:
-    rgba(21, 137, 92, 0.12);
+  --edge: #15895c;
 
-  color: #15895c;
+  background:
+    rgba(21, 137, 92, 0.10);
+
+  color: #12784f;
 }
 
 .dashboard-page.light-mode
