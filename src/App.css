@@ -5179,7 +5179,7 @@ button {
 
   min-height: 58px;
 
-  padding: 0 10px 0 16px;
+  padding: 0 16px;
 
   border: none;
 
@@ -5189,135 +5189,41 @@ button {
 
   border-radius: 6px;
 
-  /*
-     The row is its own bar: --fill is this grade's share of the
-     heaviest one, so the table can be read as a ranking without
-     anyone comparing the numbers by eye.
-  */
   background-color: transparent;
-
-  background-image:
-    linear-gradient(
-      90deg,
-      rgba(226, 184, 59, 0.15) 0%,
-      rgba(226, 184, 59, 0.03) var(--fill, 0%),
-      transparent var(--fill, 0%)
-    );
-
-  background-repeat: no-repeat;
-
-  /* Clips the bar and the spotlight to the rounded corners */
-  overflow: hidden;
 
   font-family: inherit;
 
   cursor: pointer;
 
-  animation:
-    row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-
-  animation-delay:
-    calc(var(--i, 0) * 45ms);
-
-  transition: background-color 0.18s ease;
-}
-
-@keyframes row-in {
-  from {
-    opacity: 0;
-
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-
-    transform: none;
-  }
-}
-
-.grade-row:not(.grade-head)::before {
-  content: "";
-
-  position: absolute;
-
-  top: 14px;
-  bottom: 14px;
-  left: 0;
-
-  width: 4px;
-
-  border-radius: 2px;
-
-  background: #3d4348;
-
   transition:
-    background 0.18s ease,
-    top 0.18s ease,
-    bottom 0.18s ease,
-    width 0.18s ease;
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
+/*
+   Zebra, kept very faint. Enough to carry the eye across five
+   columns without the banding becoming the loudest thing on the
+   panel. The head is a div and the rows are buttons, so
+   nth-of-type counts only the rows.
+*/
+.grade-row:not(.grade-head):nth-of-type(even) {
+  background-color:
+    rgba(255, 255, 255, 0.022);
+}
+
+/* Lifted rather than just tinted, so the row under the pointer
+   reads as picked up off the surface. */
 .grade-row:not(.grade-head):hover {
   background-color:
-    rgba(255, 255, 255, 0.055);
+    rgba(255, 255, 255, 0.06);
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.38);
 }
 
-/* The bar reaches for the full row height as you arrive on it */
-.grade-row:not(.grade-head):hover::before {
-  top: 8px;
-  bottom: 8px;
-
-  width: 5px;
-
-  background: #d0b35c;
+.head-right {
+  text-align: right;
 }
-
-
-/* =========================================================
-   ROW SPOTLIGHT
-
-   A highlight that tracks the cursor along the row, driven by
-   --mx from the pointermove handler. Rows in a dense table all
-   look alike; this makes the one under the pointer unmistakable
-   without having to colour the whole thing in.
-========================================================= */
-
-.grade-row:not(.grade-head)::after,
-.exception-row:not(.exception-head)::after {
-  content: "";
-
-  position: absolute;
-
-  inset: 0;
-
-  background:
-    radial-gradient(
-      200px circle at var(--mx, 50%) 50%,
-      rgba(255, 255, 255, 0.12),
-      transparent 72%
-    );
-
-  opacity: 0;
-
-  pointer-events: none;
-
-  transition: opacity 0.24s ease;
-}
-
-.grade-row:not(.grade-head):hover::after,
-.exception-row:not(.exception-head):hover::after {
-  opacity: 1;
-}
-
-/* The spotlight is positioned, so the cells need lifting over it */
-.grade-row:not(.grade-head) > span,
-.exception-row:not(.exception-head) > span {
-  position: relative;
-
-  z-index: 1;
-}
-
 .grade-row:focus-visible {
   outline:
     2px solid
@@ -5486,7 +5392,7 @@ button {
 .exception-row:not(.exception-head) {
   position: relative;
 
-  padding: 0 10px 0 16px;
+  padding: 0 16px;
 
   border-bottom:
     1px solid
@@ -5494,67 +5400,26 @@ button {
 
   border-radius: 6px;
 
-  /* Scaled against the worst discrepancy on screen, so the
-     biggest problems are the widest without reading a number. */
-  background-image:
-    linear-gradient(
-      90deg,
-      rgba(227, 73, 72, 0.15) 0%,
-      rgba(227, 73, 72, 0.03) var(--fill, 0%),
-      transparent var(--fill, 0%)
-    );
-
-  background-repeat: no-repeat;
-
-  overflow: hidden;
-
-  animation:
-    row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-
-  animation-delay:
-    calc(var(--i, 0) * 45ms);
-
-  transition: background-color 0.18s ease;
-}
-
-.exception-row:not(.exception-head)::before {
-  content: "";
-
-  position: absolute;
-
-  top: 14px;
-  bottom: 14px;
-  left: 0;
-
-  width: 4px;
-
-  border-radius: 2px;
-
-  /* Amber for a quantity gap; red when a register is missing the
-     lot altogether, which is the worse of the two. */
-  background: #c08a2e;
+  background-color: transparent;
 
   transition:
-    background 0.18s ease,
-    top 0.18s ease,
-    bottom 0.18s ease,
-    width 0.18s ease;
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
-.exception-row.ex-missing::before {
-  background: #e34948;
+/* Every row here is a div including the head, so nth-child is
+   what alternates them; which parity starts does not matter. */
+.exception-row:not(.exception-head):nth-child(even) {
+  background-color:
+    rgba(255, 255, 255, 0.022);
 }
 
 .exception-row:not(.exception-head):hover {
   background-color:
-    rgba(255, 255, 255, 0.055);
-}
+    rgba(255, 255, 255, 0.06);
 
-.exception-row:not(.exception-head):hover::before {
-  top: 8px;
-  bottom: 8px;
-
-  width: 5px;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.38);
 }
 
 .ex-id {
@@ -5812,83 +5677,66 @@ button {
 
 
 /* =========================================================
-   SORTABLE HEADS, PAIRED BARS, ROW ACTIONS
+   TABLE ROWS, PAIRED BARS, ROW ACTIONS
 ========================================================= */
 
-.sort-head {
-  display: flex;
+/*
+   Status as a pill rather than bare text, so state is legible
+   without reading the words — the dot carries the colour and the
+   label says which state it is, never colour alone.
+*/
+.pill {
+  display: inline-flex;
 
   align-items: center;
 
   gap: 6px;
 
-  width: 100%;
+  padding: 4px 11px;
 
-  padding: 0;
+  border-radius: 12px;
 
-  border: none;
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
 
-  background: none;
+  letter-spacing: 0.5px;
 
-  color: inherit;
-
-  font: inherit;
-
-  letter-spacing: inherit;
-
-  text-align: left;
-
-  cursor: pointer;
-
-  transition: color 0.18s ease;
+  white-space: nowrap;
 }
 
-/* Figures are right-aligned, so their heads have to be too. This
-   replaces an nth-child rule that stopped matching once the heads
-   became buttons rather than spans. */
-.sort-right {
-  justify-content: flex-end;
+.pill::before {
+  content: "";
+
+  width: 5px;
+  height: 5px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+
+  flex-shrink: 0;
 }
 
-.sort-head:hover {
-  color: #d8d8d8;
+.pill-bad {
+  background:
+    rgba(227, 73, 72, 0.16);
+
+  color: #f0908f;
 }
 
-.sort-on {
+.pill-warn {
+  background:
+    rgba(226, 184, 59, 0.15);
+
   color: #e2b83b;
 }
 
-/* Faint on hover so the column reads as sortable before you
-   commit; solid once it is the one doing the sorting. */
-.sort-caret {
-  display: inline-flex;
+.pill-ok {
+  background:
+    rgba(47, 211, 155, 0.13);
 
-  width: 9px;
-
-  opacity: 0;
-
-  transition:
-    opacity 0.18s ease,
-    transform 0.22s ease;
-}
-
-.sort-head:hover .sort-caret {
-  opacity: 0.45;
-}
-
-.sort-on .sort-caret {
-  opacity: 1;
-}
-
-.caret-up {
-  transform: rotate(180deg);
-}
-
-.sort-caret svg {
-  width: 100%;
-  height: auto;
-
-  display: block;
+  color: #55d9a6;
 }
 
 /* ---- manual against PL2P ---- */
@@ -6563,34 +6411,23 @@ button {
   border-bottom-color: #efeeea;
 }
 
+/*
+   The dark zebra is 2.2% white, which is invisible on a white
+   panel — light mode needs its own step. Kept lighter than the
+   hover below so hovering still clearly wins.
+*/
 .dashboard-page.light-mode
-.grade-row:not(.grade-head)::before {
-  background: #d2d0cb;
+.grade-row:not(.grade-head):nth-of-type(even) {
+  background-color: #f8f8f6;
 }
 
 .dashboard-page.light-mode
 .grade-row:not(.grade-head):hover {
-  /* background-color, not the shorthand: the shorthand resets
-     background-image and would erase the magnitude bar. */
   background-color: #edeff1;
-}
 
-.dashboard-page.light-mode
-.grade-row:not(.grade-head):hover::before {
-  background: #927127;
-}
-
-/* The spotlight has to darken on a light surface, not lighten */
-.dashboard-page.light-mode
-.grade-row:not(.grade-head)::after,
-.dashboard-page.light-mode
-.exception-row:not(.exception-head)::after {
-  background:
-    radial-gradient(
-      200px circle at var(--mx, 50%) 50%,
-      rgba(0, 0, 0, 0.07),
-      transparent 72%
-    );
+  /* The dark shadow is 38% black; that would be a bruise here */
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.09);
 }
 
 .dashboard-page.light-mode
@@ -6599,18 +6436,16 @@ button {
 }
 
 .dashboard-page.light-mode
+.exception-row:not(.exception-head):nth-child(even) {
+  background-color: #f8f8f6;
+}
+
+.dashboard-page.light-mode
 .exception-row:not(.exception-head):hover {
   background-color: #edeff1;
-}
 
-.dashboard-page.light-mode
-.exception-row:not(.exception-head)::before {
-  background: #b8862c;
-}
-
-.dashboard-page.light-mode
-.exception-row.ex-missing::before {
-  background: #c0332f;
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.09);
 }
 
 .dashboard-page.light-mode
@@ -6707,15 +6542,27 @@ button {
 }
 
 .dashboard-page.light-mode
-.sort-head:hover {
-  color: #3a3a3a;
+.pill-bad {
+  background:
+    rgba(192, 51, 47, 0.12);
+
+  color: #b4302c;
 }
 
-/* The dark-mode gold washes out on white; this is the same step
-   the other light accents use. */
 .dashboard-page.light-mode
-.sort-on {
-  color: #927127;
+.pill-warn {
+  background:
+    rgba(146, 113, 39, 0.14);
+
+  color: #7d6021;
+}
+
+.dashboard-page.light-mode
+.pill-ok {
+  background:
+    rgba(21, 137, 92, 0.12);
+
+  color: #15895c;
 }
 
 .dashboard-page.light-mode
@@ -7752,8 +7599,6 @@ button {
   .record-head,
   .move-row,
   .shelf-fill,
-  .grade-row,
-  .exception-row,
   .export-btn::after,
   .bar-fill {
     animation: none;

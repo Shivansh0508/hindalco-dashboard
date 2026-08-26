@@ -726,329 +726,7 @@ function StockDonut() {
    the row, so the reader can see which system is short without
    opening the lot.
 */
-/*
-   Sorting reorders rows, and there is no CSS transition between two
-   grid positions. Measure where each row sits before the new order
-   lands, then play the difference back once React has moved them.
-*/
-function useRowFlip(signature) {
-  const nodes = useRef(new Map());
-  const seats = useRef(null);
-
-  const capture = () => {
-    const seen = new Map();
-
-    for (const [key, node] of nodes.current) {
-      if (node) {
-        seen.set(key, node.getBoundingClientRect().top);
-      }
-    }
-
-    seats.current = seen;
-  };
-
-  useLayoutEffect(() => {
-    const was = seats.current;
-    seats.current = null;
-
-    if (
-      !was ||
-      window.matchMedia?.(
-        "(prefers-reduced-motion: reduce)",
-      ).matches
-    ) {
-      return;
-    }
-
-    for (const [key, node] of nodes.current) {
-      if (!node || typeof node.animate !== "function") {
-        continue;
-      }
-
-      const from = was.get(key);
-
-      if (from === undefined) {
-        continue;
-      }
-
-      const dy = from - node.getBoundingClientRect().top;
-
-      // Under a pixel is not a move worth animating
-      if (Math.abs(dy) < 1) {
-        continue;
-      }
-
-      node.animate(
-        [
-          { transform: `translateY(${dy}px)` },
-          { transform: "none" },
-        ],
-        {
-          duration: 420,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        },
-      );
-    }
-  }, [signature]);
-
-  return { nodes, capture };
-}
-
-/*
-   Value getters rather than raw keys, so a column can sort on
-   something other than what it prints — DIFFERENCE ranks by
-   magnitude, since a -31 gap and a +31 gap are equally wrong.
-*/
-function sortRows(rows, getters, key, dir) {
-  const read = getters[key];
-
-  if (!read) {
-    return rows;
-  }
-
-  return [...rows].sort((a, b) => {
-    const x = read(a);
-    const y = read(b);
-
-    if (typeof x === "number" && typeof y === "number") {
-      return (x - y) * dir;
-    }
-
-    return String(x).localeCompare(String(y)) * dir;
-  });
-}
-
-function SortHead({ label, field, sort, onSort, right }) {
-  const active = sort.key === field;
-
-  return (
-    <button
-      type="button"
-      className={`sort-head ${active ? "sort-on" : ""} ${
-        right ? "sort-right" : ""
-      }`}
-      onClick={() => onSort(field)}
-      aria-label={`Sort by ${label}`}
-    >
-      <span>{label}</span>
-
-      <i
-        className={`sort-caret ${
-          active && sort.dir === 1 ? "caret-up" : ""
-        }`}
-        aria-hidden="true"
-      >
-        <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 1.5 5 5 9 1.5" />
-        </svg>
-      </i>
-    </button>
-  );
-}
-
-/*
-   Writes the pointer's x into a custom property so a row's
-   spotlight can follow it. A direct style write rather than state:
-   this fires on every mouse move, and re-rendering the table once
-   per frame to move a gradient would be indefensible.
-*/
-function trackPointer(event) {
-  const box = event.currentTarget.getBoundingClientRect();
-
-  event.currentTarget.style.setProperty(
-    "--mx",
-    `${event.clientX - box.left}px`,
-  );
-}
-
-/*
-   Quoted only where it has to be, so the file stays readable if
-   someone opens it in a text editor rather than Excel.
-*/
-function csvCell(value) {
-  const text = String(value);
-
-  const risky =
-    text.includes(",") ||
-    text.includes('"') ||
-    text.includes("\r") ||
-    text.includes("\n");
-
-  return risky
-    ? `"${text.replace(/"/g, '""')}"`
-    : text;
-}
-
-/*
-   ISO rather than the page's "22 Aug 25". A spreadsheet sorts this
-   correctly, and it cannot be misread as month-first by whoever
-   opens the file.
-*/
-function stamp(date, withTime) {
-  const pad = (n) => String(n).padStart(2, "0");
-
-  const day = `${date.getFullYear()}-${
-    pad(date.getMonth() + 1)
-  }-${pad(date.getDate())}`;
-
-  return withTime
-    ? `${day} ${pad(date.getHours())}:${pad(date.getMinutes())}`
-    : day;
-}
-
-function downloadCsv(lines, filename) {
-  const csv = lines
-    .map((line) => line.map(csvCell).join(","))
-    .join("\r\n");
-
-  /*
-     The BOM is what makes Excel read this as UTF-8 instead of the
-     machine's local codepage. Without it the ≤ in an issue name
-     arrives as mojibake on a lot of Windows installs.
-  */
-  const blob = new Blob([`\uFEFF${csv}`], {
-    type: "text/csv;charset=utf-8",
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-/*
-   A single lot cannot be one flat row: the readings and the
-   movement trail are both lists, and a history of varying length
-   would either repeat the record on every line or need its own
-   file. Three labelled blocks instead, which a spreadsheet reads
-   fine and a person can actually follow.
-*/
-function exportLotRecord(lot) {
-  const stock = reconcile(lot);
-  const moves = buildMovements(lot);
-
-  const lines = [
-    ["Lot record"],
-    ["Field", "Value"],
-    ["Lot", lot.id],
-    ["Grade", lot.grade],
-    ["Grade name", gradeBook[lot.grade].name],
-    ["Quantity MT", lot.qty.toFixed(2)],
-    [
-      "Manual register MT",
-      // Blank, not 0.00 - the register has never seen it
-      stock.manual === 0 ? "" : stock.manual.toFixed(2),
-    ],
-    ["PL2P production MT", stock.pl2p.toFixed(2)],
-    ["Difference MT", stock.diff.toFixed(2)],
-    [
-      "Reconciliation",
-      lot.check === "Matched"
-        ? "Matched"
-        : lot.check === "PL2P only"
-          ? "Not in manual register"
-          : "Quantity difference",
-    ],
-    ["Quality", lot.quality],
-    ["Produced", stamp(lot.produced, true)],
-    ["Expires", stamp(lot.expires, false)],
-    ["Shelf life days", gradeBook[lot.grade].shelfDays],
-    ["Days left", lot.daysLeft],
-    ["Age status", ageLabel(lot.daysLeft)],
-    ["Location", lot.location],
-    ["Entered by", operators[lotHash(lot.id) % operators.length]],
-
-    [],
-    ["Quality readings"],
-    ["Reading", "Value", "Unit", "In spec"],
-    ...buildQuality(lot).map((r) => [
-      r.key,
-      r.value,
-      r.unit,
-      r.ok ? "Yes" : "No",
-    ]),
-
-    [],
-    ["Movement trail"],
-    ["Date", "Location", "Note"],
-    // buildMovements returns newest first, so index 0 is where it is now
-    ...moves.map((m, i) => [
-      stamp(m.at, true),
-      m.place,
-      i === 0 ? "Current location" : "",
-    ]),
-  ];
-
-  downloadCsv(lines, `fg-lot-${lot.id}.csv`);
-}
-
-function exportCsv(rows) {
-  const lines = [
-    [
-      "Lot",
-      "Grade",
-      "Manual MT",
-      "PL2P MT",
-      "Difference MT",
-      "Issue",
-    ],
-    ...rows.map((r) => [
-      r.id,
-      r.grade,
-      r.manual === 0 ? "" : r.manual.toFixed(2),
-      r.pl2p.toFixed(2),
-      r.diff.toFixed(2),
-      r.issue,
-    ]),
-  ];
-
-  downloadCsv(
-    lines,
-    `fg-exceptions-${
-      new Date().toISOString().slice(0, 10)
-    }.csv`,
-  );
-}
-
-/* Resolves false rather than throwing when the page has no
-   clipboard permission, so the caller can stay quiet about it. */
-function copyLot(id) {
-  if (!navigator.clipboard?.writeText) {
-    return Promise.resolve(false);
-  }
-
-  return navigator.clipboard.writeText(id).then(
-    () => true,
-    () => false,
-  );
-}
-
-const GRADE_SORT = {
-  code: (g) => g.code,
-  name: (g) => g.name,
-  lots: (g) => g.lots,
-  qty: (g) => g.qty,
-  atRisk: (g) => g.atRisk,
-};
-
-const EX_SORT = {
-  id: (r) => r.id,
-  grade: (r) => r.grade,
-  manual: (r) => r.manual,
-  pl2p: (r) => r.pl2p,
-  // By magnitude: a -31 gap and a +31 gap are equally wrong
-  diff: (r) => Math.abs(r.diff),
-  issue: (r) => r.issue,
-};
-
 function ExceptionTable({ rows, filterLabel, onClear, children }) {
-  // Worst discrepancy first, which is how the list arrives
-  const [sort, setSort] = useState({ key: "diff", dir: -1 });
-
   const [copied, setCopied] = useState("");
 
   // The "copied" tag is a confirmation, not a state worth keeping
@@ -1061,31 +739,6 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
 
     return () => clearTimeout(id);
   }, [copied]);
-
-  const sorted = sortRows(rows, EX_SORT, sort.key, sort.dir);
-
-  const flip = useRowFlip(`${sort.key}${sort.dir}`);
-
-  const onSort = (key) => {
-    flip.capture();
-
-    setSort((was) =>
-      was.key === key
-        ? { key, dir: -was.dir }
-        : /* Text reads best A-Z, figures worst-first */
-          { key, dir: key === "id" || key === "grade" || key === "issue" ? 1 : -1 },
-    );
-  };
-
-  /*
-     Each row's bar is scaled against the worst discrepancy in the
-     current filter, not against a fixed ceiling — so the table
-     always uses its full width however it is sliced.
-  */
-  const worst = rows.reduce(
-    (m, r) => Math.max(m, Math.abs(r.diff)),
-    0,
-  ) || 1;
 
   /*
      Both feeds share one scale. Scaling each row to its own pair
@@ -1120,7 +773,7 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
             <button
               type="button"
               className="export-btn"
-              onClick={() => exportCsv(sorted)}
+              onClick={() => exportCsv(rows)}
               title="Download these rows as a CSV"
             >
               <svg
@@ -1152,39 +805,19 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
         <div className="exception-scroll">
           <div className="exception-table">
             <div className="exception-row exception-head">
-              {[
-                ["LOT", "id"],
-                ["GRADE", "grade"],
-                ["MANUAL vs PL2P", "pl2p"],
-                ["DIFFERENCE", "diff"],
-                ["ISSUE", "issue"],
-              ].map(([label, field]) => (
-                <SortHead
-                  key={field}
-                  label={label}
-                  field={field}
-                  sort={sort}
-                  onSort={onSort}
-                />
-              ))}
+              <span>LOT</span>
+              <span>GRADE</span>
+              <span>MANUAL vs PL2P</span>
+              <span>DIFFERENCE</span>
+              <span>ISSUE</span>
             </div>
 
-            {sorted.map((r, i) => (
+            {rows.map((r) => (
               <div
                 className={`exception-row ${
                   r.manual === 0 ? "ex-missing" : ""
                 }`}
                 key={r.id}
-                ref={(node) => {
-                  flip.nodes.current.set(r.id, node);
-                }}
-                style={{
-                  "--fill": `${
-                    (Math.abs(r.diff) / worst) * 100
-                  }%`,
-                  "--i": i,
-                }}
-                onPointerMove={trackPointer}
               >
                 <button
                   type="button"
@@ -1263,7 +896,15 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
                   <em>MT</em>
                 </span>
 
-                <span className="ex-issue">{r.issue}</span>
+                <span className="ex-issue">
+                  <i
+                    className={`pill ${
+                      r.manual === 0 ? "pill-bad" : "pill-warn"
+                    }`}
+                  >
+                    {r.issue}
+                  </i>
+                </span>
               </div>
             ))}
           </div>
@@ -2494,12 +2135,6 @@ function Dashboard({ onSignOut, operator }) {
   const [lotId, setLotId] = useState(entry?.lot ?? "");
   const [query, setQuery] = useState("");
 
-  // Heaviest grade first, which is the order the table arrives in
-  const [gradeSort, setGradeSort] = useState({
-    key: "qty",
-    dir: -1,
-  });
-
   /*
      Browser Back used to leave the site outright: moving between
      tabs, grades and lots is all component state, and state alone
@@ -2740,32 +2375,6 @@ function Dashboard({ onSignOut, operator }) {
   });
 
   const plantQty = gradeSummary.reduce((s, g) => s + g.qty, 0);
-
-  // Bars are scaled to the largest grade, so the table fills its width
-  const heaviestGrade =
-    gradeSummary.reduce((m, g) => Math.max(m, g.qty), 0) || 1;
-
-  const sortedGrades = sortRows(
-    gradeSummary,
-    GRADE_SORT,
-    gradeSort.key,
-    gradeSort.dir,
-  );
-
-  const gradeFlip = useRowFlip(
-    `${gradeSort.key}${gradeSort.dir}`,
-  );
-
-  const onGradeSort = (key) => {
-    gradeFlip.capture();
-
-    setGradeSort((was) =>
-      was.key === key
-        ? { key, dir: -was.dir }
-        : /* Text reads best A-Z, figures biggest-first */
-          { key, dir: key === "code" || key === "name" ? 1 : -1 },
-    );
-  };
 
   const kpiLabel = activeKpi
     ? overviewMetrics.find((m) => m.key === activeKpi).label
@@ -3396,39 +3005,18 @@ function Dashboard({ onSignOut, operator }) {
 
             <div className="grade-grid">
               <div className="grade-row grade-head">
-                {[
-                  ["GRADE", "code", false],
-                  ["DESCRIPTION", "name", false],
-                  ["LOTS", "lots", true],
-                  ["TOTAL STOCK", "qty", true],
-                  ["AT RISK ≤ 7D", "atRisk", true],
-                ].map(([label, field, right]) => (
-                  <SortHead
-                    key={field}
-                    label={label}
-                    field={field}
-                    sort={gradeSort}
-                    onSort={onGradeSort}
-                    right={right}
-                  />
-                ))}
+                <span>GRADE</span>
+                <span>DESCRIPTION</span>
+                <span className="head-right">LOTS</span>
+                <span className="head-right">TOTAL STOCK</span>
+                <span className="head-right">AT RISK ≤ 7D</span>
               </div>
 
-              {sortedGrades.map((g, i) => (
+              {gradeSummary.map((g) => (
                 <button
                   type="button"
                   key={g.code}
                   className="grade-row"
-                  ref={(node) => {
-                    gradeFlip.nodes.current.set(g.code, node);
-                  }}
-                  style={{
-                    "--fill": `${
-                      (g.qty / heaviestGrade) * 100
-                    }%`,
-                    "--i": i,
-                  }}
-                  onPointerMove={trackPointer}
                   onClick={() => {
                     setGrade(g.code);
                     setLotId("");
@@ -3450,12 +3038,14 @@ function Dashboard({ onSignOut, operator }) {
                     <em>MT</em>
                   </span>
 
-                  <span
-                    className={`grade-fig ${
-                      g.atRisk ? "grade-risk" : ""
-                    }`}
-                  >
-                    {g.atRisk}
+                  <span className="grade-fig">
+                    <i
+                      className={`pill ${
+                        g.atRisk ? "pill-bad" : "pill-ok"
+                      }`}
+                    >
+                      {g.atRisk}
+                    </i>
                   </span>
                 </button>
               ))}
