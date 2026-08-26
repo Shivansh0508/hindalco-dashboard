@@ -2915,14 +2915,24 @@ function Login({ onAuthenticate, open }) {
         className="login-card"
         onSubmit={handleSubmit}
       >
+        {/*
+           Cut out of the supplied JPEG: transparent background, and
+           each pixel lifted toward white only as far as it needed to
+           clear 4.5:1 on the near-black shell behind it. Untouched
+           it read 1.9:1 and the strapline was invisible.
+        */}
         <img
           className="login-crest"
-          src="/aditya-birla-group.png"
-          alt="Aditya Birla Group"
+          src="/hindalco.png"
+          alt="Hindalco"
+          onError={(event) => {
+            event.currentTarget.hidden = true;
+          }}
         />
 
+        {/* The logo above carries the company name now */}
         <p className="login-eyebrow">
-          HINDALCO BELAGAVI WORKS
+          BELAGAVI WORKS
         </p>
 
         <h2 className="login-title">

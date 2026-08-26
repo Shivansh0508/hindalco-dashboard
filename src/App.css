@@ -207,23 +207,18 @@ button {
    artwork's own 1.81 aspect so cover still trims the dead canvas
    vertically without cutting anything off.
 */
+/*
+   No card behind it any more. The PNG carries its own transparency,
+   so it sits straight on the shell — contain, because the file is
+   cropped tight to the artwork and has no margin left to spare.
+*/
 .login-crest {
-  width: 216px;
-  height: 124px;
+  width: 268px;
+  height: 78px;
 
   margin-bottom: 26px;
 
-  padding: 10px 14px;
-
-  object-fit: cover;
-
-  background: #ffffff;
-
-  border-radius: 12px;
-
-  box-shadow:
-    0 14px 34px
-    rgba(0, 0, 0, 0.45);
+  object-fit: contain;
 }
 
 .login-eyebrow {
