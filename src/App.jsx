@@ -348,6 +348,89 @@ const kpiTests = {
     l.daysLeft <= 30 || l.quality === "Reject" || l.check === "PL2P only",
 };
 
+/*
+   Module A. Bands rather than a continuous scale: dispatch decides
+   act-now / act-this-week / watch, and a band is what that decision
+   actually looks like.
+*/
+const AGE_BANDS = [
+  {
+    key: "expired",
+    label: "Expired",
+    note: "past shelf life",
+    tone: "pill-bad",
+    test: (l) => l.daysLeft < 0,
+  },
+  {
+    key: "week",
+    label: "Within 7 days",
+    note: "dispatch or re-test now",
+    tone: "pill-bad",
+    test: (l) => l.daysLeft >= 0 && l.daysLeft <= 7,
+  },
+  {
+    key: "month",
+    label: "8 to 30 days",
+    note: "plan the movement",
+    tone: "pill-warn",
+    test: (l) => l.daysLeft > 7 && l.daysLeft <= 30,
+  },
+  {
+    key: "quarter",
+    label: "31 to 90 days",
+    note: "watch",
+    tone: "pill-warn",
+    test: (l) => l.daysLeft > 30 && l.daysLeft <= 90,
+  },
+  {
+    key: "clear",
+    label: "Over 90 days",
+    note: "no action",
+    tone: "pill-ok",
+    test: (l) => l.daysLeft > 90,
+  },
+];
+
+/* Module D, the same three outcomes the reconciliation rings show */
+const RECON_TESTS = {
+  saleable: (l) => l.check === "Matched",
+  review: (l) =>
+    l.check !== "Matched" && l.check !== "PL2P only",
+  reject: (l) => l.check === "PL2P only",
+};
+
+/*
+   One armed filter for the whole overview. Whatever you click last
+   — a KPI, a reconciliation ring, an ageing band, a quality row —
+   narrows the lot register to that set. Kept as a kind plus a value
+   rather than a bare predicate, so the register can name what armed
+   it and clicking the same thing twice can disarm it.
+*/
+function lotPasses(lot, filter) {
+  if (!filter) {
+    return true;
+  }
+
+  if (filter.kind === "kpi") {
+    return kpiTests[filter.value](lot);
+  }
+
+  if (filter.kind === "recon") {
+    return RECON_TESTS[filter.value](lot);
+  }
+
+  if (filter.kind === "age") {
+    const band = AGE_BANDS.find((b) => b.key === filter.value);
+    return band ? band.test(lot) : true;
+  }
+
+  if (filter.kind === "quality") {
+    return lot.quality === filter.value;
+  }
+
+  return true;
+}
+
 const METER_STEPS = 22;
 
 const reconciliation = [
@@ -726,16 +809,695 @@ function StockDonut() {
    the row, so the reader can see which system is short without
    opening the lot.
 */
-function ExceptionTable({ rows, filterLabel, onClear, children }) {
-  const [copied, setCopied] = useState("");
+/*
+   Quoted only where it has to be, so the file stays readable if
+   someone opens it in a text editor rather than Excel.
+*/
+function csvCell(value) {
+  const text = String(value);
 
-  // The "copied" tag is a confirmation, not a state worth keeping
+  const risky =
+    text.includes(",") ||
+    text.includes('"') ||
+    text.includes("\r") ||
+    text.includes("\n");
+
+  return risky
+    ? `"${text.replace(/"/g, '""')}"`
+    : text;
+}
+
+/*
+   ISO rather than the page's "22 Aug 25". A spreadsheet sorts this
+   correctly, and it cannot be misread as month-first by whoever
+   opens the file.
+*/
+function stamp(date, withTime) {
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const day = `${date.getFullYear()}-${
+    pad(date.getMonth() + 1)
+  }-${pad(date.getDate())}`;
+
+  return withTime
+    ? `${day} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+    : day;
+}
+
+function downloadCsv(lines, filename) {
+  const csv = lines
+    .map((line) => line.map(csvCell).join(","))
+    .join("\r\n");
+
+  /*
+     The BOM is what makes Excel read this as UTF-8 instead of the
+     machine's local codepage. Without it the ≤ in an issue name
+     arrives as mojibake on a lot of Windows installs.
+  */
+  const blob = new Blob([`\uFEFF${csv}`], {
+    type: "text/csv;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function exportCsv(rows) {
+  const lines = [
+    [
+      "Lot",
+      "Grade",
+      "Manual MT",
+      "PL2P MT",
+      "Difference MT",
+      "Issue",
+    ],
+    ...rows.map((r) => [
+      r.id,
+      r.grade,
+      // Blank, not 0.00 - the manual register has never seen it
+      r.manual === 0 ? "" : r.manual.toFixed(2),
+      r.pl2p.toFixed(2),
+      r.diff.toFixed(2),
+      r.issue,
+    ]),
+  ];
+
+  downloadCsv(
+    lines,
+    `fg-exceptions-${
+      new Date().toISOString().slice(0, 10)
+    }.csv`,
+  );
+}
+
+/*
+   A single lot cannot be one flat row: the readings and the
+   movement trail are both lists, and a history of varying length
+   would either repeat the record on every line or need its own
+   file. Three labelled blocks instead, which a spreadsheet reads
+   fine and a person can actually follow.
+*/
+function exportLotRecord(lot) {
+  const stock = reconcile(lot);
+  const moves = buildMovements(lot);
+
+  const lines = [
+    ["Lot record"],
+    ["Field", "Value"],
+    ["Lot", lot.id],
+    ["Grade", lot.grade],
+    ["Grade name", gradeBook[lot.grade].name],
+    ["Quantity MT", lot.qty.toFixed(2)],
+    [
+      "Manual register MT",
+      stock.manual === 0 ? "" : stock.manual.toFixed(2),
+    ],
+    ["PL2P production MT", stock.pl2p.toFixed(2)],
+    ["Difference MT", stock.diff.toFixed(2)],
+    [
+      "Reconciliation",
+      lot.check === "Matched"
+        ? "Matched"
+        : lot.check === "PL2P only"
+          ? "Not in manual register"
+          : "Quantity difference",
+    ],
+    ["Quality", lot.quality],
+    ["Produced", stamp(lot.produced, true)],
+    ["Expires", stamp(lot.expires, false)],
+    ["Shelf life days", gradeBook[lot.grade].shelfDays],
+    ["Days left", lot.daysLeft],
+    ["Age status", ageLabel(lot.daysLeft)],
+    ["Location", lot.location],
+    ["Entered by", operators[lotHash(lot.id) % operators.length]],
+
+    [],
+    ["Quality readings"],
+    ["Reading", "Value", "Unit", "In spec"],
+    ...buildQuality(lot).map((r) => [
+      r.key,
+      r.value,
+      r.unit,
+      r.ok ? "Yes" : "No",
+    ]),
+
+    [],
+    ["Movement trail"],
+    ["Date", "Location", "Note"],
+    // buildMovements returns newest first, so index 0 is where it is now
+    ...moves.map((m, i) => [
+      stamp(m.at, true),
+      m.place,
+      i === 0 ? "Current location" : "",
+    ]),
+  ];
+
+  downloadCsv(lines, `fg-lot-${lot.id}.csv`);
+}
+
+/*
+   execCommand is deprecated, but it is the only thing that works
+   outside a secure context, and it is the reason this still copies
+   when the dev server is opened over a LAN address.
+*/
+function legacyCopy(text) {
+  try {
+    const field = document.createElement("textarea");
+
+    field.value = text;
+    field.setAttribute("readonly", "");
+
+    /* Off-screen rather than hidden: a display:none field cannot
+       be selected, so the copy would silently do nothing. */
+    field.style.position = "fixed";
+    field.style.top = "-1000px";
+    field.style.opacity = "0";
+
+    document.body.appendChild(field);
+    field.select();
+
+    const ok = document.execCommand("copy");
+
+    document.body.removeChild(field);
+
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+/*
+   navigator.clipboard exists only in a secure context — HTTPS or
+   localhost. Served over a plain LAN address it is undefined, so
+   this falls back rather than resolving false and looking broken.
+*/
+function copyLot(id) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(id).then(
+      () => true,
+      () => legacyCopy(id),
+    );
+  }
+
+  return Promise.resolve(legacyCopy(id));
+}
+
+/*
+   Counts up once, the first time the figure scrolls into view.
+   Tied to the observer rather than to mount: these tables sit far
+   enough down the page that a mount-triggered count would be over
+   before anyone had scrolled to them.
+*/
+function Tally({ value, dp = 0 }) {
+  const [shown, setShown] = useState(0);
+  const node = useRef(null);
+
+  useEffect(() => {
+    const el = node.current;
+
+    if (
+      !el ||
+      typeof IntersectionObserver !== "function" ||
+      window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+    ) {
+      setShown(value);
+      return undefined;
+    }
+
+    let frame = 0;
+    let settled = 0;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) {
+          return;
+        }
+
+        // Once only: this is an arrival, not a loop
+        io.disconnect();
+
+        let from = 0;
+
+        const step = (now) => {
+          /*
+             The first frame's own timestamp is the origin. Taking
+             it from performance.now() instead mixes two clocks
+             whose time origins need not agree, and the elapsed
+             time can come out negative.
+          */
+          if (!from) {
+            from = now;
+          }
+
+          const t = Math.min(1, (now - from) / 700);
+
+          // Ease-out cubic, so it decelerates into the real figure
+          setShown(value * (1 - (1 - t) ** 3));
+
+          if (t < 1) {
+            frame = requestAnimationFrame(step);
+          }
+        };
+
+        frame = requestAnimationFrame(step);
+
+        /*
+           A backstop, because rAF is not guaranteed to keep firing
+           — browsers pause it in a background tab. Without this a
+           table counted halfway and then hidden would be left
+           showing a number that is simply wrong. Cancelling the
+           frame matters: otherwise a still-running loop overwrites
+           the figure this just settled.
+        */
+        settled = setTimeout(() => {
+          cancelAnimationFrame(frame);
+          setShown(value);
+        }, 800);
+      },
+      { threshold: 0.25 },
+    );
+
+    io.observe(el);
+
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(frame);
+      clearTimeout(settled);
+    };
+  }, [value]);
+
+  return <span ref={node}>{shown.toFixed(dp)}</span>;
+}
+
+const GRADE_HEADS = [
+  "GRADE",
+  "DESCRIPTION",
+  "LOTS",
+  "TOTAL STOCK",
+  "AT RISK ≤ 7D",
+];
+
+/*
+   Its own component so the crosshair and the open row are local
+   state. Left in Dashboard, every cell hover would re-render the
+   whole page to move a highlight.
+*/
+function GradeTable({ rows, onOpen }) {
+  const [open, setOpen] = useState("");
+
+  return (
+    <div className="grade-grid">
+      <div className="grade-row grade-head">
+        {GRADE_HEADS.map((label, i) => (
+          <span
+            key={label}
+            className={i >= 2 ? "head-right" : ""}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+
+      {rows.map((g) => (
+        <React.Fragment key={g.code}>
+          <button
+            type="button"
+            className={`grade-row ${
+              open === g.code ? "row-open" : ""
+            }`}
+            aria-expanded={open === g.code}
+            onClick={() =>
+              setOpen((was) => (was === g.code ? "" : g.code))
+            }
+          >
+            <span className="grade-code">
+              {g.code}
+
+              <i className="row-caret" aria-hidden="true">
+                <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 1.5 5 5 9 1.5" />
+                </svg>
+              </i>
+            </span>
+
+            <span className="grade-name">{g.name}</span>
+
+            <span className="grade-fig">
+              <Tally value={g.lots} />
+            </span>
+
+            <span className="grade-fig">
+              <Tally value={g.qty} dp={2} />
+              <em>MT</em>
+            </span>
+
+            <span className="grade-fig">
+              <i
+                className={`pill ${
+                  g.atRisk ? "pill-bad" : "pill-ok"
+                }`}
+              >
+                {g.atRisk}
+              </i>
+            </span>
+          </button>
+
+          {open === g.code ? (
+            <div className="grade-detail">
+              <dl>
+                <div>
+                  <dt>Oldest lot</dt>
+                  <dd>
+                    {g.oldest.id}
+                    <em>{ageLabel(g.oldest.daysLeft)}</em>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>At risk</dt>
+                  <dd>
+                    {g.atRisk} {g.atRisk === 1 ? "lot" : "lots"}
+                    <em>{g.atRiskQty.toFixed(2)} MT</em>
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Held in</dt>
+                  <dd>{g.bays.join(", ")}</dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                className="detail-open"
+                onClick={() => onOpen(g.code)}
+              >
+                Open {g.code} register →
+              </button>
+            </div>
+          ) : null}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+/*
+   A panel head with an armed-filter chip, shared by the three
+   overview tables so each says what is narrowing it the same way.
+   A wrapper only: it adds no styling of its own.
+*/
+function OverviewPanel({ label, title, side, filter, onClear, children }) {
+  return (
+    <section className="exception-panel">
+      <div className="panel-header">
+        <div>
+          <p className="panel-label">{label}</p>
+          <h2>{title}</h2>
+        </div>
+
+        <div className="panel-actions">
+          {filter ? (
+            <button
+              type="button"
+              className="filter-chip"
+              onClick={onClear}
+            >
+              {filter.label}
+              <i>clear</i>
+            </button>
+          ) : (
+            <span className="panel-side">{side}</span>
+          )}
+        </div>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+/* Module A — how much stock is running out, and when */
+function AgeingTable({ lots, filter, onPick }) {
+  const total = lots.reduce((s, l) => s + l.qty, 0) || 1;
+
+  return (
+    <OverviewPanel
+      label="AGE ANALYSIS"
+      title="Ageing bands"
+      side={`${lots.length} lots`}
+    >
+      <div className="ov-table ov-age">
+        <div className="ov-row ov-head">
+          <span>WINDOW</span>
+          <span>WHAT IT MEANS</span>
+          <span className="head-right">LOTS</span>
+          <span className="head-right">QUANTITY</span>
+          <span className="head-right">SHARE</span>
+        </div>
+
+        {AGE_BANDS.map((band) => {
+          const hit = lots.filter(band.test);
+          const qty = hit.reduce((s, l) => s + l.qty, 0);
+          const armed =
+            filter?.kind === "age" && filter.value === band.key;
+
+          return (
+            <button
+              type="button"
+              key={band.key}
+              className={`ov-row ${armed ? "ov-armed" : ""}`}
+              onClick={() =>
+                onPick(
+                  armed
+                    ? null
+                    : {
+                        kind: "age",
+                        value: band.key,
+                        label: band.label,
+                      },
+                )
+              }
+            >
+              <span className="ov-key">{band.label}</span>
+              <span className="ov-note">{band.note}</span>
+              <span className="ov-fig">{hit.length}</span>
+
+              <span className="ov-fig">
+                {qty.toFixed(2)}
+                <em>MT</em>
+              </span>
+
+              <span className="ov-fig">
+                <i className={`pill ${band.tone}`}>
+                  {((qty / total) * 100).toFixed(1)}%
+                </i>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </OverviewPanel>
+  );
+}
+
+/* Modules C and E — what the lab said, and what is not saleable */
+function QualityTable({ lots, filter, onPick }) {
+  const total = lots.reduce((s, l) => s + l.qty, 0) || 1;
+
+  const states = [...new Set(lots.map((l) => l.quality))].sort();
+
+  const tone = (q) =>
+    q === "Accept"
+      ? "pill-ok"
+      : q === "Reject"
+        ? "pill-bad"
+        : "pill-warn";
+
+  return (
+    <OverviewPanel
+      label="QUALITY / DISPOSITION"
+      title="Stock by status"
+      side={`${states.length} states`}
+    >
+      <div className="ov-table ov-quality">
+        <div className="ov-row ov-head">
+          <span>STATUS</span>
+          <span>SALEABLE</span>
+          <span className="head-right">LOTS</span>
+          <span className="head-right">QUANTITY</span>
+          <span className="head-right">SHARE</span>
+        </div>
+
+        {states.map((state) => {
+          const hit = lots.filter((l) => l.quality === state);
+          const qty = hit.reduce((s, l) => s + l.qty, 0);
+          const armed =
+            filter?.kind === "quality" && filter.value === state;
+
+          return (
+            <button
+              type="button"
+              key={state}
+              className={`ov-row ${armed ? "ov-armed" : ""}`}
+              onClick={() =>
+                onPick(
+                  armed
+                    ? null
+                    : {
+                        kind: "quality",
+                        value: state,
+                        label: `Quality: ${state}`,
+                      },
+                )
+              }
+            >
+              <span className="ov-key">
+                <i className={`pill ${tone(state)}`}>{state}</i>
+              </span>
+
+              <span className="ov-note">
+                {state === "Accept" ? "Yes" : "No, held"}
+              </span>
+
+              <span className="ov-fig">{hit.length}</span>
+
+              <span className="ov-fig">
+                {qty.toFixed(2)}
+                <em>MT</em>
+              </span>
+
+              <span className="ov-fig">
+                {((qty / total) * 100).toFixed(1)}%
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </OverviewPanel>
+  );
+}
+
+/*
+   The register the brief actually asks for: every lot with every
+   field it lists, at lot level rather than grade level. This is what
+   the KPIs, the reconciliation rings and the two tables above all
+   drill into — one table, narrowed by whatever was clicked last.
+*/
+function LotRegister({ lots, filter, onClear, onOpen }) {
+  const qty = lots.reduce((s, l) => s + l.qty, 0);
+
+  return (
+    <OverviewPanel
+      label="LOT LEVEL"
+      title="Lot register"
+      side={`${lots.length} lots · ${qty.toFixed(2)} MT`}
+      filter={filter}
+      onClear={onClear}
+    >
+      {lots.length === 0 ? (
+        <p className="exception-empty">
+          No lots match this filter.
+        </p>
+      ) : (
+        <div className="exception-scroll">
+          <div className="ov-table ov-register">
+            <div className="ov-row ov-head">
+              <span>LOT</span>
+              <span>GRADE</span>
+              <span className="head-right">QUANTITY</span>
+              <span>EXPIRES</span>
+              <span>AGE</span>
+              <span>LOCATION</span>
+              <span>QUALITY</span>
+              <span>RECONCILIATION</span>
+            </div>
+
+            {lots.map((l) => {
+              const stock = reconcile(l);
+
+              return (
+                <button
+                  type="button"
+                  key={l.id}
+                  className="ov-row"
+                  onClick={() => onOpen(l)}
+                  title="Open the full record for this lot"
+                >
+                  <span className="ov-key">{l.id}</span>
+
+                  <span className="ov-note">{l.grade}</span>
+
+                  <span className="ov-fig">
+                    {l.qty.toFixed(2)}
+                    <em>MT</em>
+                  </span>
+
+                  <span className="ov-note">
+                    {stampFmt.format(l.expires)}
+                  </span>
+
+                  <span
+                    className={`ov-note ${expiryTone(l.daysLeft)}`}
+                  >
+                    {ageLabel(l.daysLeft)}
+                  </span>
+
+                  <span className="ov-note">{l.location}</span>
+
+                  <span className="ov-note">
+                    <i
+                      className={`pill ${
+                        l.quality === "Accept"
+                          ? "pill-ok"
+                          : l.quality === "Reject"
+                            ? "pill-bad"
+                            : "pill-warn"
+                      }`}
+                    >
+                      {l.quality}
+                    </i>
+                  </span>
+
+                  <span className="ov-note">
+                    {stock.diff === 0 ? (
+                      "Matched"
+                    ) : (
+                      <b className="ex-off">
+                        {stock.diff > 0 ? "+" : ""}
+                        {stock.diff.toFixed(2)} MT
+                      </b>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </OverviewPanel>
+  );
+}
+
+function ExceptionTable({ rows, filterLabel, onClear, children }) {
+  const [copied, setCopied] = useState(null);
+
+  // The tag is a confirmation, not a state worth keeping
   useEffect(() => {
     if (!copied) {
       return undefined;
     }
 
-    const id = setTimeout(() => setCopied(""), 1500);
+    const id = setTimeout(() => setCopied(null), 1500);
 
     return () => clearTimeout(id);
   }, [copied]);
@@ -805,11 +1567,15 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
         <div className="exception-scroll">
           <div className="exception-table">
             <div className="exception-row exception-head">
-              <span>LOT</span>
-              <span>GRADE</span>
-              <span>MANUAL vs PL2P</span>
-              <span>DIFFERENCE</span>
-              <span>ISSUE</span>
+              {[
+                "LOT",
+                "GRADE",
+                "MANUAL vs PL2P",
+                "DIFFERENCE",
+                "ISSUE",
+              ].map((label) => (
+                <span key={label}>{label}</span>
+              ))}
             </div>
 
             {rows.map((r) => (
@@ -822,11 +1588,15 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
                 <button
                   type="button"
                   className={`ex-id ${
-                    copied === r.id ? "ex-copied" : ""
+                    copied?.id === r.id
+                      ? copied.ok
+                        ? "ex-copied"
+                        : "ex-copyfail"
+                      : ""
                   }`}
                   onClick={() =>
-                    copyLot(r.id).then(
-                      (ok) => ok && setCopied(r.id),
+                    copyLot(r.id).then((ok) =>
+                      setCopied({ id: r.id, ok }),
                     )
                   }
                   title="Copy this lot number"
@@ -834,7 +1604,11 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
                   {r.id}
 
                   <i aria-hidden="true">
-                    {copied === r.id ? "copied" : "copy"}
+                    {copied?.id === r.id
+                      ? copied.ok
+                        ? "copied"
+                        : "failed"
+                      : "copy"}
                   </i>
                 </button>
 
@@ -892,7 +1666,7 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
                   }`}
                 >
                   {r.diff > 0 ? "+" : ""}
-                  {r.diff.toFixed(2)}
+                  <Tally value={r.diff} dp={2} />
                   <em>MT</em>
                 </span>
 
@@ -930,7 +1704,7 @@ const RING_RADII = [78, 59, 40];
 const RING_SWEEP = 0.8333;
 const RING_WIDTH = 14;
 
-function ReconciliationBars() {
+function ReconciliationBars({ onPick }) {
   const [hovered, setHovered] = useState(null);
 
   const totalLots = reconciliation.reduce((s, r) => s + r.lots, 0);
@@ -1065,6 +1839,13 @@ function ReconciliationBars() {
                   }}
                   onMouseEnter={() => setHovered(r.key)}
                   onMouseLeave={() => setHovered(null)}
+                  onClick={() =>
+                    onPick?.({
+                      kind: "recon",
+                      value: r.key,
+                      label: r.label,
+                    })
+                  }
                 />
               ))}
             </g>
@@ -2314,6 +3095,19 @@ function Dashboard({ onSignOut, operator }) {
   const [activeKpi, setActiveKpi] = useState("");
 
   /*
+     What the KPIs, the reconciliation rings and the two summary
+     tables all arm. One filter rather than one per table, so the
+     register always shows the set you last asked for instead of
+     several tables disagreeing about what is selected.
+  */
+  const [lotFilter, setLotFilter] = useState(null);
+
+  // Soonest to expire first: the register is a work queue
+  const registerLots = allLots
+    .filter((l) => lotPasses(l, lotFilter))
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  /*
      The exception list is the register narrowed three ways at
      once: whichever KPI is armed, the grade picker, and the typed
      query. Each is optional, so they compose rather than override.
@@ -2365,12 +3159,32 @@ function Dashboard({ onSignOut, operator }) {
   const gradeSummary = lotGrades.map((g) => {
     const lots = allLots.filter((l) => l.grade === g);
 
+    const risky = lots.filter((l) => l.daysLeft <= 7);
+
     return {
       code: g,
       name: gradeBook[g].name,
       lots: lots.length,
       qty: lots.reduce((s, l) => s + l.qty, 0),
-      atRisk: lots.filter((l) => l.daysLeft <= 7).length,
+      atRisk: risky.length,
+      atRiskQty: risky.reduce((s, l) => s + l.qty, 0),
+      // Fewest days left, so the one closest to expiry
+      oldest: lots.reduce(
+        (a, l) => (l.daysLeft < a.daysLeft ? l : a),
+        lots[0],
+      ),
+      /*
+         Only real locations. A PL2P-only lot carries "Not in
+         register" in its location field, which is a reconciliation
+         state rather than somewhere the stock is standing.
+      */
+      bays: [
+        ...new Set(
+          lots
+            .map((l) => l.location)
+            .filter((place) => place !== "Not in register"),
+        ),
+      ],
     };
   });
 
@@ -2712,11 +3526,25 @@ function Dashboard({ onSignOut, operator }) {
                       armed ? "metric-armed" : ""
                     }`}
                     aria-pressed={armed}
-                    onClick={() =>
-                      setActiveKpi(
-                        armed || m.key === "all" ? "" : m.key,
-                      )
-                    }
+                    onClick={() => {
+                      const next =
+                        armed || m.key === "all" ? "" : m.key;
+
+                      setActiveKpi(next);
+
+                      /* The same click arms the lot register, so a
+                         KPI answers "which lots?" and not just
+                         "how many?" */
+                      setLotFilter(
+                        next
+                          ? {
+                              kind: "kpi",
+                              value: next,
+                              label: m.label,
+                            }
+                          : null,
+                      );
+                    }}
                   >
                     <div className="metric-top">
                       <p>{m.label}</p>
@@ -2888,7 +3716,9 @@ function Dashboard({ onSignOut, operator }) {
           {/* Eleven curves need the wide column; the rings do not */}
           <section className="dashboard-panels panels-wide-first">
             <StockDonut />
-            <ReconciliationBars />
+            <ReconciliationBars
+              onPick={(pick) => setLotFilter(pick)}
+            />
           </section>
 
           {/*
@@ -3003,59 +3833,60 @@ function Dashboard({ onSignOut, operator }) {
             )}
             </div>
 
-            <div className="grade-grid">
-              <div className="grade-row grade-head">
-                <span>GRADE</span>
-                <span>DESCRIPTION</span>
-                <span className="head-right">LOTS</span>
-                <span className="head-right">TOTAL STOCK</span>
-                <span className="head-right">AT RISK ≤ 7D</span>
-              </div>
-
-              {gradeSummary.map((g) => (
-                <button
-                  type="button"
-                  key={g.code}
-                  className="grade-row"
-                  onClick={() => {
-                    setGrade(g.code);
-                    setLotId("");
-                    setQuery("");
-                    window.scrollTo({
-                      top: 0,
-                      behavior: "smooth",
-                    });
-                  }}
-                >
-                  <span className="grade-code">{g.code}</span>
-
-                  <span className="grade-name">{g.name}</span>
-
-                  <span className="grade-fig">{g.lots}</span>
-
-                  <span className="grade-fig">
-                    {g.qty.toFixed(2)}
-                    <em>MT</em>
-                  </span>
-
-                  <span className="grade-fig">
-                    <i
-                      className={`pill ${
-                        g.atRisk ? "pill-bad" : "pill-ok"
-                      }`}
-                    >
-                      {g.atRisk}
-                    </i>
-                  </span>
-                </button>
-              ))}
-            </div>
+            <GradeTable
+              rows={gradeSummary}
+              onOpen={(code) => {
+                setGrade(code);
+                setLotId("");
+                setQuery("");
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                });
+              }}
+            />
           </section>
 
           <ExceptionTable
             rows={exceptionRows}
             filterLabel={kpiLabel}
-            onClear={() => setActiveKpi("")}
+            onClear={() => {
+              setActiveKpi("");
+
+              /* A KPI arms this panel and the register together,
+                 so clearing here has to release both or the two
+                 chips disagree about what is selected. */
+              setLotFilter((f) =>
+                f?.kind === "kpi" ? null : f,
+              );
+            }}
+          />
+
+          <AgeingTable
+            lots={allLots}
+            filter={lotFilter}
+            onPick={setLotFilter}
+          />
+
+          <QualityTable
+            lots={allLots}
+            filter={lotFilter}
+            onPick={setLotFilter}
+          />
+
+          <LotRegister
+            lots={registerLots}
+            filter={lotFilter}
+            onClear={() => {
+              setLotFilter(null);
+              setActiveKpi("");
+            }}
+            onOpen={(lot) => {
+              setGrade(lot.grade);
+              setLotId(lot.id);
+              setQuery("");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
           />
           </>
           )}

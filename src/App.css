@@ -1309,9 +1309,11 @@ button {
   left: 0;
 
   width: 94px;
-  height: 66px;
+  height: 62px;
 
-  padding: 7px;
+  /* The source no longer carries 151px of its own whitespace, so
+     the card does not need to add much either. */
+  padding: 5px;
 
   display: flex;
 
@@ -1320,13 +1322,10 @@ button {
 
   background: #ffffff;
 
-  /* Hangs from the top-left corner now, so the only free
-     corner is the bottom-right. */
-  border-radius:
-    0
-    0
-    8px
-    0;
+  /* Square on every corner. It is anchored into the top-left of
+     the viewport, so a lone rounded bottom-right read as an
+     unfinished edge rather than a deliberate shape. */
+  border-radius: 0;
 
   box-shadow:
     0
@@ -1343,11 +1342,10 @@ button {
 
 .dashboard-header.header-scrolled
 .abg-logo img {
-  width: 80px;
-  height: 50px;
-
-  max-width: 100%;
-  max-height: 100%;
+  /* Fill the content box rather than a fixed size: contain keeps
+     the aspect, so this is simply as large as it can be. */
+  width: 100%;
+  height: 100%;
 
   object-fit: contain;
   object-position: center;
@@ -5181,6 +5179,9 @@ button {
 
   padding: 0 16px;
 
+  /* The edge sweep runs past both ends of the row */
+  overflow: hidden;
+
   border: none;
 
   border-bottom:
@@ -5211,11 +5212,14 @@ button {
     rgba(255, 255, 255, 0.022);
 }
 
-/* Lifted rather than just tinted, so the row under the pointer
-   reads as picked up off the surface. */
+/*
+   Gold, and on the row rather than the column — the row is what
+   you are actually reading across. It matches the accent that
+   sweeps the row's bottom edge, so the two read as one gesture.
+*/
 .grade-row:not(.grade-head):hover {
   background-color:
-    rgba(255, 255, 255, 0.06);
+    rgba(226, 184, 59, 0.11);
 
   box-shadow:
     0 6px 18px rgba(0, 0, 0, 0.38);
@@ -5223,6 +5227,255 @@ button {
 
 .head-right {
   text-align: right;
+}
+
+
+/* =========================================================
+   FOCUS MODE
+
+   Hovering anywhere in a table drops every row back, then the one
+   under the pointer comes forward. Opacity and a border only — the
+   rows stay flat, so this adds no fill to compete with the data.
+
+   The :hover sits on the container, which is what lets the other
+   rows react to a sibling being hovered. CSS can do this without
+   a single line of JavaScript.
+========================================================= */
+
+.grade-grid:hover .grade-row:not(.grade-head),
+.exception-table:hover .exception-row:not(.exception-head) {
+  opacity: 0.38;
+}
+
+.grade-grid:hover .grade-row:not(.grade-head):hover,
+.exception-table:hover .exception-row:not(.exception-head):hover {
+  opacity: 1;
+}
+
+.grade-row:not(.grade-head),
+.exception-row:not(.exception-head) {
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    opacity 0.22s ease;
+}
+
+/*
+   A short bright segment that runs the length of the row once, on
+   arrival. Travelling rather than simply appearing, so the eye is
+   pulled along the row it is about to read.
+*/
+.grade-row:not(.grade-head)::after,
+.exception-row:not(.exception-head)::after {
+  content: "";
+
+  position: absolute;
+
+  left: -34%;
+  bottom: 0;
+
+  width: 34%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #e2b83b,
+      transparent
+    );
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+.grade-row:not(.grade-head):hover::after,
+.exception-row:not(.exception-head):hover::after {
+  animation:
+    edge-sweep 0.85s ease-out forwards;
+}
+
+@keyframes edge-sweep {
+  from {
+    left: -34%;
+    opacity: 1;
+  }
+
+  to {
+    left: 100%;
+    opacity: 1;
+  }
+}
+
+
+/* =========================================================
+   ROW DETAIL
+========================================================= */
+
+.row-caret {
+  display: inline-flex;
+
+  width: 9px;
+
+  margin-left: 9px;
+
+  color: #6f767b;
+
+  transition:
+    transform 0.22s ease,
+    color 0.18s ease;
+}
+
+.row-caret svg {
+  width: 100%;
+  height: auto;
+
+  display: block;
+}
+
+.row-open .row-caret {
+  transform: rotate(180deg);
+
+  color: #e2b83b;
+}
+
+.grade-detail {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 24px;
+
+  flex-wrap: wrap;
+
+  padding: 18px 16px 20px;
+
+  border-bottom:
+    1px solid
+    #26292c;
+
+  animation:
+    detail-open 0.32s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes detail-open {
+  from {
+    opacity: 0;
+
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+/* Dimmed with the rows, but lit again on its own hover */
+.grade-grid:hover .grade-detail {
+  opacity: 0.38;
+}
+
+.grade-grid:hover .grade-detail:hover {
+  opacity: 1;
+}
+
+.grade-detail dl {
+  flex: 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(178px, 1fr));
+
+  gap: 18px 30px;
+
+  margin: 0;
+}
+
+.grade-detail dt {
+  margin-bottom: 6px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+.grade-detail dd {
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #e8e8e8;
+}
+
+.grade-detail dd em {
+  display: block;
+
+  margin-top: 4px;
+
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 500;
+
+  color: #9aa1a6;
+}
+
+.detail-open {
+  flex-shrink: 0;
+
+  height: 32px;
+
+  padding: 0 15px;
+
+  border:
+    1px solid
+    #3f454a;
+
+  border-radius: 16px;
+
+  background: transparent;
+
+  color: #d6d6d6;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.detail-open:hover {
+  border-color: #d0b35c;
+
+  background:
+    rgba(208, 179, 92, 0.12);
+
+  color: #e6cd86;
+}
+
+/* The caret needs the cell to be a flex line */
+.grade-code {
+  display: inline-flex;
+
+  align-items: center;
 }
 .grade-row:focus-visible {
   outline:
@@ -5394,6 +5647,8 @@ button {
 
   padding: 0 16px;
 
+  overflow: hidden;
+
   border-bottom:
     1px solid
     #26292c;
@@ -5416,7 +5671,7 @@ button {
 
 .exception-row:not(.exception-head):hover {
   background-color:
-    rgba(255, 255, 255, 0.06);
+    rgba(226, 184, 59, 0.11);
 
   box-shadow:
     0 6px 18px rgba(0, 0, 0, 0.38);
@@ -5855,6 +6110,15 @@ button {
   opacity: 1;
 }
 
+.ex-copyfail i {
+  opacity: 1;
+
+  background:
+    rgba(227, 73, 72, 0.16);
+
+  color: #f0908f;
+}
+
 .ex-copied i {
   opacity: 1;
 
@@ -5989,8 +6253,265 @@ button {
 
 
 /* =========================================================
+   OVERVIEW TABLES
+
+   The ageing bands, the quality split and the lot register. They
+   get the same treatment as the two tables already on this page —
+   zebra, gold row hover, focus dim, edge sweep — restated here
+   rather than folded into those selectors, so nothing that was
+   already working can shift.
+========================================================= */
+
+.ov-table {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.ov-row {
+  display: grid;
+
+  align-items: center;
+
+  gap: 18px;
+
+  min-height: 54px;
+
+  text-align: left;
+}
+
+/* The two summary tables share a shape; the register is wider */
+.ov-age .ov-row,
+.ov-quality .ov-row {
+  grid-template-columns:
+    minmax(150px, 1fr)
+    minmax(160px, 1.2fr)
+    80px
+    130px
+    110px;
+}
+
+.ov-register .ov-row {
+  grid-template-columns:
+    minmax(150px, 1.1fr)
+    76px
+    110px
+    110px
+    100px
+    minmax(130px, 1fr)
+    104px
+    132px;
+}
+
+.ov-head {
+  min-height: 0;
+
+  padding: 0 10px 12px 16px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+.ov-row:not(.ov-head) {
+  position: relative;
+
+  padding: 0 16px;
+
+  border: none;
+
+  border-bottom:
+    1px solid
+    #26292c;
+
+  border-radius: 6px;
+
+  background-color: transparent;
+
+  font-family: inherit;
+
+  cursor: pointer;
+
+  overflow: hidden;
+
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    opacity 0.22s ease;
+}
+
+.ov-row:not(.ov-head):nth-of-type(even) {
+  background-color:
+    rgba(255, 255, 255, 0.022);
+}
+
+.ov-table:hover .ov-row:not(.ov-head) {
+  opacity: 0.38;
+}
+
+.ov-table:hover .ov-row:not(.ov-head):hover {
+  opacity: 1;
+}
+
+.ov-row:not(.ov-head):hover {
+  background-color:
+    rgba(226, 184, 59, 0.11);
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.38);
+}
+
+.ov-row:not(.ov-head)::after {
+  content: "";
+
+  position: absolute;
+
+  left: -34%;
+  bottom: 0;
+
+  width: 34%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #e2b83b,
+      transparent
+    );
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+.ov-row:not(.ov-head):hover::after {
+  animation:
+    edge-sweep 0.85s ease-out forwards;
+}
+
+/*
+   Stays lit while it is the armed filter. Listed after the zebra
+   rule and matched at the same weight, so it wins on order rather
+   than needing !important.
+*/
+.ov-row.ov-armed:not(.ov-head) {
+  background-color:
+    rgba(226, 184, 59, 0.14);
+}
+
+.ov-armed .ov-key {
+  color: #e2b83b;
+}
+
+.ov-key {
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+
+  color: #f2f2f2;
+}
+
+.ov-note {
+  font-size: 12px;
+
+  color: #b9c0c5;
+}
+
+.ov-fig {
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: right;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-fig em {
+  margin-left: 4px;
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.ov-note b {
+  font-weight: 700;
+}
+
+
+/* =========================================================
    LIGHT MODE
 ========================================================= */
+.dashboard-page.light-mode
+.ov-head {
+  border-bottom-color: #e8e6e1;
+
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.ov-row:not(.ov-head) {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.ov-row:not(.ov-head):nth-of-type(even) {
+  background-color: #f4f4f1;
+}
+
+.dashboard-page.light-mode
+.ov-row:not(.ov-head):hover {
+  background-color:
+    rgba(146, 113, 39, 0.13);
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.09);
+}
+
+.dashboard-page.light-mode
+.ov-row.ov-armed:not(.ov-head) {
+  background-color:
+    rgba(146, 113, 39, 0.16);
+}
+
+.dashboard-page.light-mode
+.ov-armed .ov-key {
+  color: #7d6021;
+}
+
+.dashboard-page.light-mode
+.ov-key {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.ov-note {
+  color: #55595c;
+}
+
+.dashboard-page.light-mode
+.ov-fig {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.ov-fig em {
+  color: #767676;
+}
+
 
 .dashboard-page.light-mode
 .spec-name {
@@ -6411,6 +6932,50 @@ button {
   border-bottom-color: #efeeea;
 }
 
+.dashboard-page.light-mode
+.row-caret {
+  color: #9a9a94;
+}
+
+.dashboard-page.light-mode
+.row-open .row-caret {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.grade-detail {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.grade-detail dd {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.grade-detail dt,
+.dashboard-page.light-mode
+.grade-detail dd em {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.detail-open {
+  border-color: #d8d6d0;
+
+  color: #55595c;
+}
+
+.dashboard-page.light-mode
+.detail-open:hover {
+  border-color: #927127;
+
+  background:
+    rgba(146, 113, 39, 0.10);
+
+  color: #6f5620;
+}
+
 /*
    The dark zebra is 2.2% white, which is invisible on a white
    panel — light mode needs its own step. Kept lighter than the
@@ -6418,12 +6983,14 @@ button {
 */
 .dashboard-page.light-mode
 .grade-row:not(.grade-head):nth-of-type(even) {
-  background-color: #f8f8f6;
+  background-color: #f4f4f1;
 }
 
 .dashboard-page.light-mode
 .grade-row:not(.grade-head):hover {
-  background-color: #edeff1;
+  /* The dark tint is gold at 11%, which is invisible on white */
+  background-color:
+    rgba(146, 113, 39, 0.13);
 
   /* The dark shadow is 38% black; that would be a bruise here */
   box-shadow:
@@ -6437,12 +7004,13 @@ button {
 
 .dashboard-page.light-mode
 .exception-row:not(.exception-head):nth-child(even) {
-  background-color: #f8f8f6;
+  background-color: #f4f4f1;
 }
 
 .dashboard-page.light-mode
 .exception-row:not(.exception-head):hover {
-  background-color: #edeff1;
+  background-color:
+    rgba(146, 113, 39, 0.13);
 
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.09);
@@ -7599,6 +8167,8 @@ button {
   .record-head,
   .move-row,
   .shelf-fill,
+  .grade-row::after,
+  .exception-row::after,
   .export-btn::after,
   .bar-fill {
     animation: none;
