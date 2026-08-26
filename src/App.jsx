@@ -1915,11 +1915,81 @@ const tabContent = {
 };
 
 function Dashboard({ onSignOut, operator }) {
-  const [activeTab, setActiveTab] = useState("Overview");
+  /*
+     Seeded from the history entry rather than from defaults. Going
+     forward into a dashboard entry remounts this component, and a
+     fresh "Overview" would both show the wrong view and push a
+     duplicate entry over the one being restored.
+  */
+  const entry =
+    window.history.state?.view === "dash"
+      ? window.history.state
+      : null;
 
-  const [grade, setGrade] = useState("");
-  const [lotId, setLotId] = useState("");
+  const [activeTab, setActiveTab] = useState(
+    entry?.tab ?? "Overview",
+  );
+
+  const [grade, setGrade] = useState(entry?.grade ?? "");
+  const [lotId, setLotId] = useState(entry?.lot ?? "");
   const [query, setQuery] = useState("");
+
+  /*
+     Browser Back used to leave the site outright: moving between
+     tabs, grades and lots is all component state, and state alone
+     puts nothing on the history stack. Every view now records an
+     entry, so Back steps through them one at a time and only exits
+     once there is genuinely nothing left to go back to.
+
+     query is deliberately not tracked. It is a live filter, and an
+     entry per keystroke would make Back useless.
+  */
+  useEffect(() => {
+    const next = {
+      view: "dash",
+      tab: activeTab,
+      grade,
+      lot: lotId,
+    };
+
+    const current = window.history.state;
+
+    /*
+       Comparing against the entry we are already on is what stops
+       a popstate restore from immediately pushing the state it
+       just restored, which would make Back a no-op.
+    */
+    if (
+      current &&
+      current.view === "dash" &&
+      current.tab === next.tab &&
+      current.grade === next.grade &&
+      current.lot === next.lot
+    ) {
+      return;
+    }
+
+    window.history.pushState(next, "");
+  }, [activeTab, grade, lotId]);
+
+  useEffect(() => {
+    const onPop = (event) => {
+      // Signing out is App's to handle; ignore anything not a view.
+      if (event.state?.view !== "dash") {
+        return;
+      }
+
+      setActiveTab(event.state.tab ?? "Overview");
+      setGrade(event.state.grade ?? "");
+      setLotId(event.state.lot ?? "");
+      setQuery("");
+    };
+
+    window.addEventListener("popstate", onPop);
+
+    return () =>
+      window.removeEventListener("popstate", onPop);
+  }, []);
 
   /*
      Fixed at mount rather than read from the ticking clock, so a
@@ -2787,37 +2857,6 @@ function Dashboard({ onSignOut, operator }) {
           </>
           )}
 
-          <section className="placeholder-section">
-            <p className="panel-label">
-              {activeTab.toUpperCase()}
-            </p>
-
-            <h2>
-              {activeTab}
-            </h2>
-
-            <div className="placeholder-body">
-              <svg
-                className="placeholder-icon"
-                viewBox="0 0 48 48"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <ellipse cx="24" cy="12" rx="14" ry="5" />
-                <path d="M10 12v10c0 2.8 6.3 5 14 5s14-2.2 14-5V12" />
-                <path d="M10 22v10c0 2.8 6.3 5 14 5s14-2.2 14-5V22" />
-              </svg>
-
-              <p>
-                Backend-connected data will appear here.
-              </p>
-            </div>
-          </section>
-
           </>
         )}
       </main>
@@ -3011,6 +3050,13 @@ export default function App() {
   const [operator, setOperator] = useState("");
   const [revealed, setRevealed] = useState(false);
 
+  // The popstate listener binds once, so it reads the live value here
+  const operatorRef = useRef("");
+
+  useEffect(() => {
+    operatorRef.current = operator;
+  }, [operator]);
+
   /*
      One painted frame before the card animates, so the entrance
      has a start value to run from. A bare rAF can land before that
@@ -3022,6 +3068,41 @@ export default function App() {
     return () => clearTimeout(id);
   }, []);
 
+  /*
+     The login screen is the floor of the history stack, so Back
+     from the dashboard's first view lands here rather than leaving
+     the site. Going back past a signed-out state never signs you
+     back in: the handler only ever signs out.
+  */
+  useEffect(() => {
+    if (!window.history.state) {
+      window.history.replaceState({ view: "login" }, "");
+    }
+
+    const onPop = (event) => {
+      if (event.state?.view === "dash") {
+        /*
+           Forward, back into the dashboard. Restore the session only
+           if it was never explicitly ended - signing out clears the
+           operator, and that is what stops Back or Forward walking
+           into an authenticated view afterwards.
+        */
+        if (operatorRef.current) {
+          setSignedIn(true);
+        }
+
+        return;
+      }
+
+      setSignedIn(false);
+    };
+
+    window.addEventListener("popstate", onPop);
+
+    return () =>
+      window.removeEventListener("popstate", onPop);
+  }, []);
+
   if (signedIn) {
     return (
       <Dashboard
@@ -3029,6 +3110,15 @@ export default function App() {
         onSignOut={() => {
           setOperator("");
           setSignedIn(false);
+
+          /*
+             replace, not push: Back after signing out must not walk
+             into an authenticated view. Older dash entries are still
+             on the stack, but the popstate handler only ever signs
+             out, so they cannot restore a session.
+          */
+          window.history.replaceState({ view: "login" }, "");
+
           window.scrollTo({ top: 0, behavior: "auto" });
         }}
       />
@@ -3044,6 +3134,12 @@ export default function App() {
         onAuthenticate={(id) => {
           setOperator(id);
           setSignedIn(true);
+
+          window.history.pushState(
+            { view: "dash", tab: "Overview", grade: "", lot: "" },
+            "",
+          );
+
           window.scrollTo({ top: 0, behavior: "auto" });
         }}
       />

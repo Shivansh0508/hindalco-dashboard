@@ -1299,13 +1299,19 @@ button {
 .abg-logo {
   position: fixed;
 
+  /*
+     Flush to the edge and trimmed down. It is fixed while the
+     content column is centred at min(1500px, 92%), so on anything
+     under about 1690px wide the two share the same space - this
+     halves how much of the content it covers.
+  */
   top: 0;
-  left: 18px;
+  left: 0;
 
-  width: 112px;
-  height: 78px;
+  width: 94px;
+  height: 66px;
 
-  padding: 8px;
+  padding: 7px;
 
   display: flex;
 
@@ -1314,13 +1320,13 @@ button {
 
   background: #ffffff;
 
-  /* Hangs from the viewport top: square where it meets
-     the edge, matching curves on both free corners. */
+  /* Hangs from the top-left corner now, so the only free
+     corner is the bottom-right. */
   border-radius:
     0
     0
     8px
-    8px;
+    0;
 
   box-shadow:
     0
@@ -1337,8 +1343,8 @@ button {
 
 .dashboard-header.header-scrolled
 .abg-logo img {
-  width: 96px;
-  height: 62px;
+  width: 80px;
+  height: 50px;
 
   max-width: 100%;
   max-height: 100%;
@@ -5481,52 +5487,6 @@ button {
 
 
 /* =========================================================
-   PLACEHOLDER
-========================================================= */
-
-.placeholder-section {
-  min-height: 500px;
-
-  padding: 32px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  background-color: #181a1c;
-
-  border:
-    1px solid
-    #2c3033;
-
-  border-radius: 6px;
-
-  box-shadow:
-    0
-    8px
-    25px
-    rgba(0, 0, 0, 0.20);
-}
-
-.placeholder-section h2 {
-  margin:
-    0
-    0
-    12px;
-
-  font-size: 30px;
-
-  font-weight: 500;
-
-  color: #ffffff;
-}
-
-.placeholder-body p {
-  color: #858b8f;
-}
-
-
-/* =========================================================
    LIGHT MODE
 ========================================================= */
 
@@ -5562,9 +5522,7 @@ button {
 .dashboard-page.light-mode
 .metric-card,
 .dashboard-page.light-mode
-.panel,
-.dashboard-page.light-mode
-.placeholder-section {
+.panel {
   background-color: #ffffff;
 
   border-color: #e5e5e1;
@@ -6639,17 +6597,6 @@ button {
   color: #555555;
 }
 
-.dashboard-page.light-mode
-.placeholder-section h2 {
-  color: #202020;
-}
-
-.dashboard-page.light-mode
-.placeholder-body p {
-  color: #888888;
-}
-
-
 /* =========================================================
    THEME TRANSITIONS
 
@@ -6670,27 +6617,18 @@ button {
 .table-row > span:nth-child(2),
 .table-row > span:last-child,
 .operation-row strong,
-.operation-row span,
-.placeholder-section h2,
-.placeholder-body p,
-.placeholder-icon {
+.operation-row span {
   transition:
     color 0.35s ease;
 }
 
 .metric-card,
-.panel,
-.placeholder-section {
+.panel {
   transition:
     background 0.35s ease,
     border-color 0.35s ease,
     transform 0.18s ease,
     box-shadow 0.18s ease;
-}
-
-.placeholder-body {
-  transition:
-    border-color 0.35s ease;
 }
 
 .live-status {
@@ -6846,44 +6784,6 @@ button {
 
 
 /* =========================================================
-   EMPTY STATE
-========================================================= */
-
-.placeholder-body {
-  flex: 1;
-
-  margin-top: 26px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 18px;
-
-  border:
-    1px dashed
-    #2c3033;
-
-  border-radius: 6px;
-}
-
-.placeholder-icon {
-  width: 46px;
-  height: 46px;
-
-  color: #3d4348;
-}
-
-.dashboard-page.light-mode
-.placeholder-icon {
-  color: #cbcbc4;
-}
-
-
-/* =========================================================
    HOVER STATES
 ========================================================= */
 
@@ -6952,13 +6852,8 @@ button {
 }
 
 /* =========================================================
-   LIGHT MODE HOVER / EMPTY STATE
+   LIGHT MODE HOVER
 ========================================================= */
-
-.dashboard-page.light-mode
-.placeholder-body {
-  border-color: #e5e5e1;
-}
 
 .dashboard-page.light-mode
 .metric-card:hover {
