@@ -5043,13 +5043,51 @@ button {
 
   border-radius: 6px;
 
-  background: transparent;
+  /*
+     The row is its own bar: --fill is this grade's share of the
+     heaviest one, so the table can be read as a ranking without
+     anyone comparing the numbers by eye.
+  */
+  background-color: transparent;
+
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(226, 184, 59, 0.15) 0%,
+      rgba(226, 184, 59, 0.03) var(--fill, 0%),
+      transparent var(--fill, 0%)
+    );
+
+  background-repeat: no-repeat;
+
+  /* Clips the bar and the spotlight to the rounded corners */
+  overflow: hidden;
 
   font-family: inherit;
 
   cursor: pointer;
 
-  transition: background 0.18s ease;
+  animation:
+    row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  animation-delay:
+    calc(var(--i, 0) * 45ms);
+
+  transition: background-color 0.18s ease;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
 }
 
 .grade-row:not(.grade-head)::before {
@@ -5067,16 +5105,71 @@ button {
 
   background: #3d4348;
 
-  transition: background 0.18s ease;
+  transition:
+    background 0.18s ease,
+    top 0.18s ease,
+    bottom 0.18s ease,
+    width 0.18s ease;
 }
 
 .grade-row:not(.grade-head):hover {
-  background:
+  background-color:
     rgba(255, 255, 255, 0.055);
 }
 
+/* The bar reaches for the full row height as you arrive on it */
 .grade-row:not(.grade-head):hover::before {
+  top: 8px;
+  bottom: 8px;
+
+  width: 5px;
+
   background: #d0b35c;
+}
+
+
+/* =========================================================
+   ROW SPOTLIGHT
+
+   A highlight that tracks the cursor along the row, driven by
+   --mx from the pointermove handler. Rows in a dense table all
+   look alike; this makes the one under the pointer unmistakable
+   without having to colour the whole thing in.
+========================================================= */
+
+.grade-row:not(.grade-head)::after,
+.exception-row:not(.exception-head)::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    radial-gradient(
+      200px circle at var(--mx, 50%) 50%,
+      rgba(255, 255, 255, 0.12),
+      transparent 72%
+    );
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition: opacity 0.24s ease;
+}
+
+.grade-row:not(.grade-head):hover::after,
+.exception-row:not(.exception-head):hover::after {
+  opacity: 1;
+}
+
+/* The spotlight is positioned, so the cells need lifting over it */
+.grade-row:not(.grade-head) > span,
+.exception-row:not(.exception-head) > span {
+  position: relative;
+
+  z-index: 1;
 }
 
 .grade-row:focus-visible {
@@ -5229,7 +5322,8 @@ button {
 .exception-head {
   min-height: 0;
 
-  padding-bottom: 12px;
+  /* Matches the padding the data rows gained, so columns line up */
+  padding: 0 10px 12px 16px;
 
   border-bottom:
     1px solid
@@ -5244,9 +5338,77 @@ button {
 }
 
 .exception-row:not(.exception-head) {
+  position: relative;
+
+  padding: 0 10px 0 16px;
+
   border-bottom:
     1px solid
     #26292c;
+
+  border-radius: 6px;
+
+  /* Scaled against the worst discrepancy on screen, so the
+     biggest problems are the widest without reading a number. */
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(227, 73, 72, 0.15) 0%,
+      rgba(227, 73, 72, 0.03) var(--fill, 0%),
+      transparent var(--fill, 0%)
+    );
+
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+  animation:
+    row-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  animation-delay:
+    calc(var(--i, 0) * 45ms);
+
+  transition: background-color 0.18s ease;
+}
+
+.exception-row:not(.exception-head)::before {
+  content: "";
+
+  position: absolute;
+
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+
+  width: 4px;
+
+  border-radius: 2px;
+
+  /* Amber for a quantity gap; red when a register is missing the
+     lot altogether, which is the worse of the two. */
+  background: #c08a2e;
+
+  transition:
+    background 0.18s ease,
+    top 0.18s ease,
+    bottom 0.18s ease,
+    width 0.18s ease;
+}
+
+.exception-row.ex-missing::before {
+  background: #e34948;
+}
+
+.exception-row:not(.exception-head):hover {
+  background-color:
+    rgba(255, 255, 255, 0.055);
+}
+
+.exception-row:not(.exception-head):hover::before {
+  top: 8px;
+  bottom: 8px;
+
+  width: 5px;
 }
 
 .ex-id {
@@ -5876,12 +6038,47 @@ button {
 
 .dashboard-page.light-mode
 .grade-row:not(.grade-head):hover {
-  background: #edeff1;
+  /* background-color, not the shorthand: the shorthand resets
+     background-image and would erase the magnitude bar. */
+  background-color: #edeff1;
 }
 
 .dashboard-page.light-mode
 .grade-row:not(.grade-head):hover::before {
   background: #927127;
+}
+
+/* The spotlight has to darken on a light surface, not lighten */
+.dashboard-page.light-mode
+.grade-row:not(.grade-head)::after,
+.dashboard-page.light-mode
+.exception-row:not(.exception-head)::after {
+  background:
+    radial-gradient(
+      200px circle at var(--mx, 50%) 50%,
+      rgba(0, 0, 0, 0.07),
+      transparent 72%
+    );
+}
+
+.dashboard-page.light-mode
+.exception-row:not(.exception-head) {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.exception-row:not(.exception-head):hover {
+  background-color: #edeff1;
+}
+
+.dashboard-page.light-mode
+.exception-row:not(.exception-head)::before {
+  background: #b8862c;
+}
+
+.dashboard-page.light-mode
+.exception-row.ex-missing::before {
+  background: #c0332f;
 }
 
 .dashboard-page.light-mode
@@ -6943,6 +7140,8 @@ button {
   .record-head,
   .move-row,
   .shelf-fill,
+  .grade-row,
+  .exception-row,
   .bar-fill {
     animation: none;
   }

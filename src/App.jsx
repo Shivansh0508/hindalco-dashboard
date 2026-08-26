@@ -677,7 +677,179 @@ function StockDonut() {
    the row, so the reader can see which system is short without
    opening the lot.
 */
+/*
+   Sorting reorders rows, and there is no CSS transition between two
+   grid positions. Measure where each row sits before the new order
+   lands, then play the difference back once React has moved them.
+*/
+function useRowFlip(signature) {
+  const nodes = useRef(new Map());
+  const seats = useRef(null);
+
+  const capture = () => {
+    const seen = new Map();
+
+    for (const [key, node] of nodes.current) {
+      if (node) {
+        seen.set(key, node.getBoundingClientRect().top);
+      }
+    }
+
+    seats.current = seen;
+  };
+
+  useLayoutEffect(() => {
+    const was = seats.current;
+    seats.current = null;
+
+    if (
+      !was ||
+      window.matchMedia?.(
+        "(prefers-reduced-motion: reduce)",
+      ).matches
+    ) {
+      return;
+    }
+
+    for (const [key, node] of nodes.current) {
+      if (!node || typeof node.animate !== "function") {
+        continue;
+      }
+
+      const from = was.get(key);
+
+      if (from === undefined) {
+        continue;
+      }
+
+      const dy = from - node.getBoundingClientRect().top;
+
+      // Under a pixel is not a move worth animating
+      if (Math.abs(dy) < 1) {
+        continue;
+      }
+
+      node.animate(
+        [
+          { transform: `translateY(${dy}px)` },
+          { transform: "none" },
+        ],
+        {
+          duration: 420,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    }
+  }, [signature]);
+
+  return { nodes, capture };
+}
+
+/*
+   Value getters rather than raw keys, so a column can sort on
+   something other than what it prints — DIFFERENCE ranks by
+   magnitude, since a -31 gap and a +31 gap are equally wrong.
+*/
+function sortRows(rows, getters, key, dir) {
+  const read = getters[key];
+
+  if (!read) {
+    return rows;
+  }
+
+  return [...rows].sort((a, b) => {
+    const x = read(a);
+    const y = read(b);
+
+    if (typeof x === "number" && typeof y === "number") {
+      return (x - y) * dir;
+    }
+
+    return String(x).localeCompare(String(y)) * dir;
+  });
+}
+
+function SortHead({ label, field, sort, onSort, right }) {
+  const active = sort.key === field;
+
+  return (
+    <button
+      type="button"
+      className={`sort-head ${active ? "sort-on" : ""} ${
+        right ? "sort-right" : ""
+      }`}
+      onClick={() => onSort(field)}
+      aria-label={`Sort by ${label}`}
+    >
+      <span>{label}</span>
+
+      <i
+        className={`sort-caret ${
+          active && sort.dir === 1 ? "caret-up" : ""
+        }`}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1 1.5 5 5 9 1.5" />
+        </svg>
+      </i>
+    </button>
+  );
+}
+
+/*
+   Writes the pointer's x into a custom property so a row's
+   spotlight can follow it. A direct style write rather than state:
+   this fires on every mouse move, and re-rendering the table once
+   per frame to move a gradient would be indefensible.
+*/
+function trackPointer(event) {
+  const box = event.currentTarget.getBoundingClientRect();
+
+  event.currentTarget.style.setProperty(
+    "--mx",
+    `${event.clientX - box.left}px`,
+  );
+}
+
+const EX_SORT = {
+  id: (r) => r.id,
+  grade: (r) => r.grade,
+  manual: (r) => r.manual,
+  pl2p: (r) => r.pl2p,
+  // By magnitude: a -31 gap and a +31 gap are equally wrong
+  diff: (r) => Math.abs(r.diff),
+  issue: (r) => r.issue,
+};
+
 function ExceptionTable({ rows, filterLabel, onClear, children }) {
+  // Worst discrepancy first, which is how the list arrives
+  const [sort, setSort] = useState({ key: "diff", dir: -1 });
+
+  const sorted = sortRows(rows, EX_SORT, sort.key, sort.dir);
+
+  const flip = useRowFlip(`${sort.key}${sort.dir}`);
+
+  const onSort = (key) => {
+    flip.capture();
+
+    setSort((was) =>
+      was.key === key
+        ? { key, dir: -was.dir }
+        : /* Text reads best A-Z, figures worst-first */
+          { key, dir: key === "id" || key === "grade" || key === "issue" ? 1 : -1 },
+    );
+  };
+
+  /*
+     Each row's bar is scaled against the worst discrepancy in the
+     current filter, not against a fixed ceiling — so the table
+     always uses its full width however it is sliced.
+  */
+  const worst = rows.reduce(
+    (m, r) => Math.max(m, Math.abs(r.diff)),
+    0,
+  ) || 1;
   return (
     <section className="exception-panel">
       <div className="panel-header">
@@ -708,16 +880,41 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
         <div className="exception-scroll">
           <div className="exception-table">
             <div className="exception-row exception-head">
-              <span>LOT</span>
-              <span>GRADE</span>
-              <span>MANUAL</span>
-              <span>PL2P</span>
-              <span>DIFFERENCE</span>
-              <span>ISSUE</span>
+              {[
+                ["LOT", "id"],
+                ["GRADE", "grade"],
+                ["MANUAL", "manual"],
+                ["PL2P", "pl2p"],
+                ["DIFFERENCE", "diff"],
+                ["ISSUE", "issue"],
+              ].map(([label, field]) => (
+                <SortHead
+                  key={field}
+                  label={label}
+                  field={field}
+                  sort={sort}
+                  onSort={onSort}
+                />
+              ))}
             </div>
 
-            {rows.map((r) => (
-              <div className="exception-row" key={r.id}>
+            {sorted.map((r, i) => (
+              <div
+                className={`exception-row ${
+                  r.manual === 0 ? "ex-missing" : ""
+                }`}
+                key={r.id}
+                ref={(node) => {
+                  flip.nodes.current.set(r.id, node);
+                }}
+                style={{
+                  "--fill": `${
+                    (Math.abs(r.diff) / worst) * 100
+                  }%`,
+                  "--i": i,
+                }}
+                onPointerMove={trackPointer}
+              >
                 <span className="ex-id">{r.id}</span>
 
                 <span className="ex-grade">{r.grade}</span>
@@ -2175,6 +2372,10 @@ function Dashboard({ onSignOut, operator }) {
 
   const plantQty = gradeSummary.reduce((s, g) => s + g.qty, 0);
 
+  // Bars are scaled to the largest grade, so the table fills its width
+  const heaviestGrade =
+    gradeSummary.reduce((m, g) => Math.max(m, g.qty), 0) || 1;
+
   const kpiLabel = activeKpi
     ? overviewMetrics.find((m) => m.key === activeKpi).label
     : "";
@@ -2811,11 +3012,18 @@ function Dashboard({ onSignOut, operator }) {
                 <span>AT RISK ≤ 7D</span>
               </div>
 
-              {gradeSummary.map((g) => (
+              {gradeSummary.map((g, i) => (
                 <button
                   type="button"
                   key={g.code}
                   className="grade-row"
+                  style={{
+                    "--fill": `${
+                      (g.qty / heaviestGrade) * 100
+                    }%`,
+                    "--i": i,
+                  }}
+                  onPointerMove={trackPointer}
                   onClick={() => {
                     setGrade(g.code);
                     setLotId("");
