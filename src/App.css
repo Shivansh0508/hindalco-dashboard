@@ -1,0 +1,7374 @@
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+}
+
+
+/* =========================================================
+   HOMEPAGE
+========================================================= */
+
+.home-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 650px;
+  overflow: hidden;
+  background: #090f12;
+}
+
+.home-video {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.home-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.20),
+      rgba(0, 0, 0, 0.38)
+    );
+}
+
+/* =========================================================
+   LOGIN
+
+   The right of the window is a scrim that fades out of the video
+   rather than a panel laid over it, so there is no seam to see.
+   How far the fade can run depends on how much wider the scrim is
+   than the form, which is why the stops tighten at each step down.
+========================================================= */
+
+.login-shell {
+  position: absolute;
+  z-index: 3;
+
+  top: 0;
+  right: 0;
+  bottom: 0;
+
+  /*
+     Wider than the reading area because the leading third of it
+     is a fade. Solid ground begins around 78% across the window,
+     leaving the video legible over roughly the first two thirds.
+  */
+  width: 42%;
+
+  min-width: 440px;
+
+  /*
+     Anchored to the right rather than centred in the panel — the
+     panel's leading third is only a fade, so centring inside it
+     parked the form further left than it looked like it should.
+     Left padding stays small since that side is the fade.
+  */
+  padding:
+    40px
+    clamp(44px, 4.5vw, 96px)
+    40px
+    32px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(9, 11, 13, 0) 0%,
+      rgba(9, 11, 13, 0.55) 14%,
+      rgba(9, 11, 13, 0.9) 32%,
+      rgba(9, 11, 13, 0.98) 50%,
+      #090b0d 68%
+    );
+
+  transform: translateX(100%);
+
+  transition:
+    transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.login-shell-open {
+  transform: translateX(0);
+}
+
+/*
+   Narrower windows leave the panel barely wider than the form, so
+   the form ends up sitting in the fade. Pulling the stops in keeps
+   solid ground under the text; the transition is shorter but the
+   part of it left visible beside the form still reads as a wash.
+*/
+@media (max-width: 1600px) {
+
+  .login-shell {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9, 11, 13, 0) 0%,
+        rgba(9, 11, 13, 0.8) 9%,
+        rgba(9, 11, 13, 0.96) 20%,
+        #090b0d 32%
+      );
+  }
+}
+
+@media (max-width: 1150px) {
+
+  .login-shell {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9, 11, 13, 0) 0%,
+        rgba(9, 11, 13, 0.93) 5%,
+        #090b0d 13%
+      );
+  }
+}
+
+.login-card {
+  width: min(400px, 100%);
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  color: #ffffff;
+
+  opacity: 0;
+}
+
+/* Held back so the form lands after the panel has arrived */
+.login-shell-open .login-card {
+  animation:
+    login-rise 0.6s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    0.34s both;
+}
+
+@keyframes login-rise {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+/*
+   The wordmark runs the full width of the artwork and sits hard
+   against its bottom edge, so filling the plate edge-to-edge put
+   "ADITYA" and "GROUP" underneath the corner radius. The padding
+   holds the crop clear of the corners; the content box keeps the
+   artwork's own 1.81 aspect so cover still trims the dead canvas
+   vertically without cutting anything off.
+*/
+.login-crest {
+  width: 216px;
+  height: 124px;
+
+  margin-bottom: 26px;
+
+  padding: 10px 14px;
+
+  object-fit: cover;
+
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 14px 34px
+    rgba(0, 0, 0, 0.45);
+}
+
+.login-eyebrow {
+  margin-bottom: 10px;
+
+  color: #e2b83b;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 2.8px;
+}
+
+.login-title {
+  margin-bottom: 16px;
+
+  font-size: 34px;
+  font-weight: 500;
+
+  line-height: 1.12;
+
+  letter-spacing: -0.8px;
+
+  text-align: center;
+}
+
+.login-rule {
+  width: 54px;
+  height: 2px;
+
+  margin-bottom: 14px;
+
+  background: #e2b83b;
+
+  box-shadow:
+    0 0 12px
+    rgba(226, 184, 59, 0.6);
+}
+
+.login-sub {
+  margin-bottom: 26px;
+
+  color: #9aa1a6;
+
+  font-size: 13px;
+}
+
+
+/* =========================================================
+   LOGIN FIELDS
+========================================================= */
+
+.login-field {
+  position: relative;
+
+  width: 100%;
+
+  margin-bottom: 14px;
+
+  display: block;
+}
+
+.login-field input {
+  width: 100%;
+
+  height: 52px;
+
+  padding: 20px 74px 6px 15px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.login-field input:focus {
+  border-color:
+    rgba(226, 184, 59, 0.75);
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+/*
+   The label rides on :placeholder-shown — it sits mid-field while
+   empty and lifts into the padding once there is a value or focus.
+*/
+.login-field span {
+  position: absolute;
+
+  left: 16px;
+  top: 17px;
+
+  color: #8d949a;
+
+  font-size: 13px;
+
+  pointer-events: none;
+
+  transform-origin: left top;
+
+  transition:
+    transform 0.22s ease,
+    color 0.22s ease;
+}
+
+.login-field input:focus + span,
+.login-field input:not(:placeholder-shown) + span {
+  transform:
+    translateY(-10px)
+    scale(0.78);
+
+  color: #e2b83b;
+}
+
+.login-peek {
+  position: absolute;
+
+  right: 10px;
+  top: 50%;
+
+  padding: 6px 8px;
+
+  border: none;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: #9aa1a6;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+
+  cursor: pointer;
+
+  transform:
+    translateY(-50%);
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.login-peek:hover {
+  color: #e2b83b;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+/*
+   Height is reserved whether or not there is a message, so the
+   card does not jump when validation fires.
+*/
+.login-error {
+  width: 100%;
+
+  min-height: 17px;
+
+  margin-bottom: 10px;
+
+  color: #ff8a84;
+
+  font-size: 11px;
+
+  opacity: 0;
+
+  transition: opacity 0.2s ease;
+}
+
+.login-error-on {
+  opacity: 1;
+}
+
+.login-submit {
+  width: 100%;
+
+  height: 50px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      120deg,
+      #e2b83b,
+      #f4d888
+    );
+
+  color: #241a02;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+}
+
+.login-submit:hover {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 12px 26px
+    rgba(226, 184, 59, 0.32);
+}
+
+.login-submit span {
+  font-size: 17px;
+}
+
+.login-field input:focus-visible,
+.login-submit:focus-visible,
+.login-peek:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   SIGN OUT
+========================================================= */
+
+.signout-button {
+  flex-shrink: 0;
+
+  padding: 0 12px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  border: none;
+
+  border-left:
+    1px solid
+    rgba(255, 255, 255, 0.28);
+
+  border-radius: 0 17px 17px 0;
+
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.signout-button svg {
+  width: 16px;
+  height: 16px;
+
+  flex-shrink: 0;
+}
+
+.signout-label {
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+}
+
+/*
+   The label is the first thing to go when the cluster tightens —
+   below 1500px there is no room for it beside the works label,
+   and the icon alone still reads.
+*/
+@media (max-width: 1500px) {
+
+  .signout-label {
+    display: none;
+  }
+
+  .signout-button {
+    width: 38px;
+
+    padding: 0;
+  }
+}
+
+/* The floating group has no room for it either */
+.dashboard-header.header-scrolled
+.signout-label {
+  display: none;
+}
+
+.dashboard-header.header-scrolled
+.signout-button {
+  width: 38px;
+
+  padding: 0;
+}
+
+.signout-button:hover {
+  background:
+    rgba(255, 120, 112, 0.3);
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+.dashboard-page {
+  /* Content already runs well past one viewport, so the
+     collapsing header still triggers without dead space. */
+  min-height: 100vh;
+
+  background: #111315;
+  color: #f3f3f3;
+
+  transition:
+    background 0.35s ease,
+    color 0.35s ease;
+}
+
+
+/* =========================================================
+   NORMAL HEADER
+========================================================= */
+
+.dashboard-header {
+  position: sticky;
+
+  top: 0;
+  z-index: 1000;
+
+  width: 100%;
+  height: 104px;
+
+  /*
+     Two stacked layers make the metal: a vertical ramp that runs
+     bright at the top, dark through the middle and lifts again
+     lower down, with a shallow diagonal sheen laid over it. Both
+     are backgrounds on the same element, so the collapsed header's
+     "background: transparent" still clears the whole thing.
+  */
+  background:
+    linear-gradient(
+      104deg,
+      rgba(255, 255, 255, 0.11) 0%,
+      rgba(255, 255, 255, 0) 20%,
+      rgba(255, 255, 255, 0) 58%,
+      rgba(255, 255, 255, 0.08) 74%,
+      rgba(255, 255, 255, 0) 90%
+    ),
+    linear-gradient(
+      180deg,
+      #e02c46 0%,
+      #d10c30 13%,
+      #a90521 44%,
+      #bd0728 63%,
+      #8e0119 88%,
+      #6d0112 100%
+    );
+
+  border-bottom:
+    1px solid
+    rgba(0, 0, 0, 0.4);
+
+  /* A lit top edge and a shadowed bottom one give it thickness */
+  box-shadow:
+    inset 0 1px 0
+    rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0
+    rgba(0, 0, 0, 0.45),
+    0 2px 12px
+    rgba(0, 0, 0, 0.38);
+
+  transition:
+    background 0.4s ease,
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.header-inner {
+  width: 100%;
+  height: 100%;
+
+  max-width: 1800px;
+
+  margin: 0 auto;
+
+  padding: 0 42px;
+
+  display: flex;
+  align-items: center;
+}
+
+
+/* =========================================================
+   NORMAL LOGO
+========================================================= */
+
+.abg-logo {
+  width: 175px;
+  height: 104px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+  justify-content: center;
+
+  gap: 3px;
+
+  padding: 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  overflow: hidden;
+}
+
+.abg-logo img {
+  display: block;
+
+  width: 152px;
+  height: 78px;
+
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: contain;
+  object-position: left center;
+
+  transition: opacity 0.3s ease;
+}
+
+.abg-logo:hover img {
+  opacity: 0.82;
+}
+
+.abg-logo-hint {
+  display: flex;
+
+  align-items: center;
+
+  gap: 4px;
+
+  padding-left: 2px;
+
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  /* Sits on a mid-red bar, so it needs a shadow to stay crisp */
+  text-shadow:
+    0 1px 3px
+    rgba(0, 0, 0, 0.4);
+
+  opacity: 0.92;
+
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.abg-logo-hint svg {
+  width: 11px;
+  height: 11px;
+
+  stroke-width: 2.2;
+}
+
+.abg-logo:hover .abg-logo-hint {
+  opacity: 1;
+
+  transform:
+    translateX(-2px);
+}
+
+/* The floating tab is too small to carry the caption */
+.dashboard-header.header-scrolled
+.abg-logo-hint {
+  display: none;
+}
+
+/* Keyboard-only ring — never shows on a mouse click */
+.abg-logo:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -2px;
+}
+
+
+/* =========================================================
+   NORMAL NAV
+========================================================= */
+
+.dashboard-nav {
+  position: relative;
+
+  flex: 1;
+
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 34px;
+
+  min-width: 0;
+}
+
+.nav-item {
+  position: relative;
+
+  padding: 8px 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  opacity: 0.8;
+}
+
+.nav-item.active {
+  opacity: 1;
+}
+
+.nav-indicator {
+  position: absolute;
+
+  top: var(--bar-top, 0);
+  left: var(--bar-left, 0);
+  right: var(--bar-right, 0);
+
+  height: var(--bar-height, 3px);
+
+  border-radius: 2px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 12px
+    rgba(255, 255, 255, 0.55);
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+/*
+   Held back until after the first measure so the bar does not
+   fly in from the nav's left edge on mount.
+*/
+.nav-indicator-ready {
+  opacity: 1;
+
+  transition:
+    left 0.44s cubic-bezier(0.36, 0, 0.16, 1)
+      var(--bar-lag-left, 0ms),
+    right 0.44s cubic-bezier(0.36, 0, 0.16, 1)
+      var(--bar-lag-right, 0ms),
+    background 0.35s ease,
+    box-shadow 0.35s ease,
+    opacity 0.35s ease;
+}
+
+
+/* =========================================================
+   NORMAL HEADER RIGHT
+========================================================= */
+
+.header-right {
+  /*
+     Works label (~120px) plus the control group (~132px with its
+     SIGN OUT label) and the gap between them come to about 268px.
+  */
+  width: 274px;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 16px;
+
+  flex-shrink: 0;
+}
+
+.works-label {
+  flex-shrink: 0;
+
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   THEME TOGGLE
+========================================================= */
+
+/*
+   Radius on the end segments rather than overflow: hidden on the
+   shell, so focus rings are not clipped by it.
+*/
+.header-controls {
+  height: 36px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: stretch;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.3);
+
+  border-radius: 18px;
+
+  background:
+    rgba(255, 255, 255, 0.1);
+
+  color: #ffffff;
+}
+
+.theme-toggle {
+  width: 38px;
+
+  flex-shrink: 0;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 17px 0 0 17px;
+
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background:
+    rgba(255, 255, 255, 0.16);
+}
+
+/* =========================================================
+   WORKS LOCKUP
+
+   The label alone was dead pixels. Stacking the database sync
+   state under it turns the same footprint into the answer to
+   the question every operator asks first: is this current?
+========================================================= */
+
+/* =========================================================
+   FEED PANEL
+
+   Sits beside the live indicator, where there is room for the
+   columns to spell themselves out — the header only ever had
+   space for abbreviations.
+========================================================= */
+
+/* =========================================================
+   FEED BAR
+========================================================= */
+
+.feed-bar {
+  margin-bottom: 26px;
+
+  padding: 5px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(210px, 0.9fr)
+    repeat(2, minmax(200px, 1fr));
+
+  gap: 5px;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 12px;
+
+  background-color: #181a1c;
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+/* The identity block reads as a label, so it takes the quiet fill */
+.feed-live {
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 20px 22px;
+
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 255, 255, 0.07),
+      rgba(255, 255, 255, 0.02)
+    );
+}
+
+.feed-live-text b {
+  display: block;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  color: #f2f2f2;
+}
+
+.feed-live-text em {
+  display: block;
+
+  margin-top: 6px;
+
+  font-style: normal;
+  font-size: 11px;
+
+  color: #858b8f;
+}
+
+.feed-cell {
+  padding: 18px 22px;
+
+  border-radius: 9px;
+
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.015)
+    );
+}
+
+.feed-cap {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.5px;
+
+  color: #858b8f;
+}
+
+.feed-cell strong {
+  display: block;
+
+  margin: 11px 0 14px;
+
+  font-size: 30px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.feed-cell strong em {
+  margin-left: 7px;
+
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+/*
+   Drains over the refresh window rather than filling up, so a
+   short bar always means the same thing: this feed is going stale.
+*/
+.feed-charge {
+  height: 4px;
+
+  margin-bottom: 11px;
+
+  border-radius: 2px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+}
+
+.feed-charge i {
+  display: block;
+
+  width: var(--c, 0%);
+
+  height: 100%;
+
+  border-radius: 2px;
+
+  background: #39b975;
+
+  transition: width 0.6s ease;
+}
+
+.sync-aging .feed-charge i {
+  background: #e1b43a;
+}
+
+.sync-stale .feed-charge i {
+  background: #e15c55;
+}
+
+.feed-age {
+  font-size: 11px;
+
+  color: #858b8f;
+}
+
+/*
+   The compact variant, for the heading's empty right slot on every
+   tab but Overview. Same markup, same colours — this block sets
+   nothing but size, so both themes follow it without a second set
+   of rules. Doubled class so it outranks the grid above it.
+*/
+.feed-bar.feed-bar-compact {
+  margin-bottom: 0;
+
+  display: flex;
+
+  align-items: stretch;
+
+  gap: 4px;
+
+  padding: 4px;
+
+  border-radius: 11px;
+}
+
+.feed-bar-compact .feed-live {
+  gap: 9px;
+
+  padding: 8px 14px;
+
+  border-radius: 8px;
+}
+
+/* No room for the strapline up here, and the crumb already says it */
+.feed-bar-compact .feed-live-text em {
+  display: none;
+}
+
+.feed-bar-compact .feed-live-text b {
+  font-size: 10px;
+
+  letter-spacing: 1.2px;
+}
+
+.feed-bar-compact .feed-cell {
+  padding: 8px 14px;
+
+  border-radius: 8px;
+}
+
+.feed-bar-compact .feed-cap {
+  gap: 7px;
+
+  font-size: 9px;
+
+  letter-spacing: 1.2px;
+}
+
+.feed-bar-compact .feed-cell strong {
+  margin: 5px 0 7px;
+
+  font-size: 19px;
+}
+
+.feed-bar-compact .feed-cell strong em {
+  margin-left: 5px;
+
+  font-size: 10px;
+}
+
+.feed-bar-compact .feed-charge {
+  height: 3px;
+
+  margin-bottom: 6px;
+}
+
+.feed-bar-compact .feed-age {
+  font-size: 10px;
+}
+
+/* Below the heading's wrap point it goes back to full width */
+@media (max-width: 900px) {
+  .feed-bar.feed-bar-compact {
+    width: 100%;
+
+    margin-top: 14px;
+  }
+}
+
+
+/* =========================================================
+   THEME ORB
+
+   One disc for both states. The moon is that disc with a second
+   circle masked over it; sliding the mask away restores the full
+   sun while the rays unfurl and spin back into place.
+========================================================= */
+
+.theme-orb {
+  width: 19px;
+  height: 19px;
+
+  display: block;
+
+  overflow: visible;
+}
+
+.orb-core {
+  fill: currentColor;
+}
+
+/* Parked clear of the disc: sun shows as a full circle */
+.orb-bite {
+  transform:
+    translate(7px, -7px);
+
+  transition:
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orb-rays {
+  transform-origin:
+    12px 12px;
+
+  transition:
+    transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+/* Dark: mask slides home to bite the crescent, rays retract */
+.dashboard-page.dark-mode
+.orb-bite {
+  transform:
+    translate(0, 0);
+}
+
+.dashboard-page.dark-mode
+.orb-rays {
+  transform:
+    scale(0)
+    rotate(-70deg);
+
+  opacity: 0;
+}
+
+
+/* =========================================================
+   SCROLLED HEADER
+========================================================= */
+
+/*
+   The header collapses completely.
+   This is what prevents the old 104px transparent
+   header from covering the dashboard.
+*/
+
+.dashboard-header.header-scrolled {
+  height: 0;
+  min-height: 0;
+
+  background: transparent;
+
+  border: none;
+
+  box-shadow: none;
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   FLOATING LOGO
+========================================================= */
+
+.dashboard-header.header-scrolled
+.abg-logo {
+  position: fixed;
+
+  top: 0;
+  left: 18px;
+
+  width: 112px;
+  height: 78px;
+
+  padding: 8px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+
+  /* Hangs from the viewport top: square where it meets
+     the edge, matching curves on both free corners. */
+  border-radius:
+    0
+    0
+    8px
+    8px;
+
+  box-shadow:
+    0
+    5px
+    18px
+    rgba(0, 0, 0, 0.20);
+
+  z-index: 1200;
+
+  overflow: hidden;
+
+  pointer-events: auto;
+}
+
+.dashboard-header.header-scrolled
+.abg-logo img {
+  width: 96px;
+  height: 62px;
+
+  max-width: 100%;
+  max-height: 100%;
+
+  object-fit: contain;
+  object-position: center;
+}
+
+
+/* =========================================================
+   FLOATING NAV
+========================================================= */
+
+.dashboard-header.header-scrolled
+.dashboard-nav {
+  position: fixed;
+
+  top: 14px;
+  left: 0;
+  right: 0;
+
+  width: max-content;
+  max-width: calc(100vw - 310px);
+
+  height: auto;
+
+  margin: 0 auto;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 32px;
+
+  z-index: 1100;
+
+  pointer-events: auto;
+
+  overflow: visible;
+}
+
+.dashboard-header.header-scrolled
+.nav-item {
+  height: auto;
+
+  padding: 4px 0;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  line-height: 1.2;
+
+  white-space: nowrap;
+
+  transform: none;
+}
+
+/*
+   Same element, new shape: the underline becomes a pill behind
+   the active label once the nav is floating and has no bar to
+   sit under. Shape is not transitioned, matching the nav's own
+   instant re-pin.
+*/
+.dashboard-header.header-scrolled
+.nav-indicator {
+  border-radius: 999px;
+
+  background:
+    rgba(226, 182, 62, 0.16);
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(226, 182, 62, 0.45);
+}
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.nav-indicator {
+  background:
+    rgba(169, 0, 32, 0.10);
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(169, 0, 32, 0.28);
+}
+
+
+/* =========================================================
+   FLOATING NAV DARK MODE
+========================================================= */
+
+.dashboard-page.dark-mode
+.dashboard-header.header-scrolled
+.nav-item {
+  color: #eeeeee;
+
+  text-shadow:
+    0 1px 5px
+    rgba(0, 0, 0, 0.85);
+}
+
+.dashboard-page.dark-mode
+.dashboard-header.header-scrolled
+.nav-item.active {
+  color: #e2b63e;
+
+  font-weight: 600;
+}
+
+.dashboard-page.dark-mode
+.dashboard-header.header-scrolled
+.nav-item:hover {
+  color: #f2c94c;
+}
+
+
+/* =========================================================
+   FLOATING NAV LIGHT MODE
+========================================================= */
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.nav-item {
+  color: #34383b;
+
+  text-shadow:
+    0 1px 4px
+    rgba(255, 255, 255, 0.95);
+}
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.nav-item.active {
+  color: #a90020;
+
+  font-weight: 600;
+}
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.nav-item:hover {
+  color: #a90020;
+}
+
+
+/* =========================================================
+   FLOATING RIGHT CONTROLS
+========================================================= */
+
+/*
+   Keep .header-right itself fixed.
+   Only the useful controls remain visible.
+*/
+
+.dashboard-header.header-scrolled
+.header-right {
+  position: fixed;
+
+  top: 12px;
+  right: 14px;
+
+  width: auto;
+  height: auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  z-index: 1200;
+
+  pointer-events: auto;
+}
+
+
+/* Hide unnecessary items */
+
+.dashboard-header.header-scrolled
+.works-label {
+  display: none;
+}
+
+
+/* =========================================================
+   FLOATING THEME BUTTON
+========================================================= */
+
+.dashboard-header.header-scrolled
+.header-controls {
+  background:
+    rgba(
+      20,
+      22,
+      24,
+      0.92
+    );
+
+  border-color:
+    #3a3f43;
+
+  color:
+    #ffffff;
+
+  backdrop-filter:
+    blur(8px);
+
+  box-shadow:
+    0
+    4px
+    14px
+    rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-header.header-scrolled
+.signout-button {
+  border-left-color: #3a3f43;
+}
+
+
+/* =========================================================
+   LIGHT MODE FLOATING CONTROLS
+========================================================= */
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.header-controls {
+  background:
+    rgba(255, 255, 255, 0.96);
+
+  border-color:
+    #d5d5d5;
+
+  color:
+    #333333;
+
+  box-shadow:
+    0
+    4px
+    14px
+    rgba(0, 0, 0, 0.12);
+}
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.signout-button {
+  border-left-color: #d5d5d5;
+}
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.theme-toggle:hover,
+
+.dashboard-page.light-mode
+.dashboard-header.header-scrolled
+.signout-button:hover {
+  background:
+    rgba(0, 0, 0, 0.06);
+}
+
+
+/* =========================================================
+   DASHBOARD CONTENT
+========================================================= */
+
+.dashboard-content {
+  width:
+    min(
+      1500px,
+      92%
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    8px
+    0
+    100px;
+}
+
+
+/* =========================================================
+   LOT FINDER
+========================================================= */
+
+.page-crumb {
+  margin-bottom: 10px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  flex-wrap: wrap;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 1.6px;
+
+  color: #858b8f;
+}
+
+.page-crumb b {
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+}
+
+.page-crumb i {
+  font-style: normal;
+
+  opacity: 0.5;
+}
+
+
+/* =========================================================
+   LOT FINDER
+========================================================= */
+
+.lot-finder {
+  margin-bottom: 22px;
+
+  padding-bottom: 18px;
+
+  border-bottom:
+    1px solid
+    #2c3033;
+}
+
+.finder-row {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 22px;
+
+  flex-wrap: wrap;
+}
+
+.finder-field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 9px;
+
+  min-width: 0;
+}
+
+.finder-field label {
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.6px;
+
+  color: #858b8f;
+}
+
+/*
+   appearance: none strips the platform chrome so the selects and
+   the input share one look; the caret is redrawn as an inline SVG
+   background, which needs the right padding reserved for it.
+*/
+.finder-field select,
+.finder-field input {
+  width: 232px;
+
+  height: 46px;
+
+  padding: 0 14px;
+
+  border:
+    1px solid
+    #3b3f42;
+
+  border-radius: 6px;
+
+  background-color: #131516;
+
+  color: #f2f2f2;
+
+  font-family: inherit;
+  font-size: 15px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.finder-field select {
+  appearance: none;
+
+  padding-right: 36px;
+
+  cursor: pointer;
+
+  background-image:
+    url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23888f94' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+
+  background-repeat: no-repeat;
+
+  background-position:
+    right 13px center;
+
+  background-size: 12px 8px;
+}
+
+.finder-field select:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+.finder-field select:hover:not(:disabled),
+.finder-field input:hover {
+  border-color: #4a4f53;
+}
+
+.finder-field select:focus,
+.finder-field input:focus {
+  border-color: #d0b35c;
+}
+
+.finder-divider {
+  width: 1px;
+
+  height: 46px;
+
+  background: #3b3f42;
+
+  transition: background 0.35s ease;
+}
+
+.finder-clear {
+  height: 46px;
+
+  margin-left: auto;
+
+  padding: 0 20px;
+
+  border:
+    1px solid
+    #3b3f42;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  color: #d7d9da;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.finder-clear:hover {
+  border-color: #4a4f53;
+
+  color: #ffffff;
+}
+
+.finder-field select:focus-visible,
+.finder-field input:focus-visible,
+.finder-clear:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   LOT RECORD
+
+   Sections arrive one after another off a --i index rather than
+   all at once: the eye is led down the record in reading order,
+   and a single delay expression covers however many blocks there
+   turn out to be.
+========================================================= */
+
+.record-block,
+.record-head {
+  animation:
+    record-in 0.52s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+
+  animation-delay:
+    calc(var(--i, 0) * 95ms + 60ms);
+}
+
+@keyframes record-in {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+.record-back {
+  margin-bottom: 26px;
+
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: #d0b35c;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+
+  cursor: pointer;
+
+  transition: color 0.2s ease;
+}
+
+.record-back:hover {
+  color: #e2b83b;
+}
+
+.record-head {
+  padding-bottom: 26px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 40px;
+
+  flex-wrap: wrap;
+
+  border-bottom:
+    2px solid
+    #3b3f42;
+}
+
+.record-kicker {
+  margin-bottom: 10px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.8px;
+
+  color: #d0b35c;
+}
+
+.record-id {
+  margin: 0;
+
+  font-size:
+    clamp(34px, 4.4vw, 58px);
+
+  font-weight: 700;
+
+  line-height: 1;
+
+  letter-spacing: -1.8px;
+
+  color: #ffffff;
+}
+
+.record-grade {
+  margin-top: 14px;
+
+  font-size: 14px;
+
+  color: #858b8f;
+}
+
+.record-figure {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 26px;
+
+  text-align: right;
+}
+
+.record-figure strong {
+  display: block;
+
+  margin: 8px 0 6px;
+
+  font-size: 46px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.record-cap {
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+
+  color: #858b8f;
+}
+
+.record-tags {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.record-block {
+  padding: 26px 0;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(150px, 210px)
+    1fr;
+
+  gap: 30px;
+
+  border-bottom:
+    1px solid
+    #2c3033;
+}
+
+.record-label {
+  padding-left: 13px;
+
+  border-left:
+    3px solid
+    #d0b35c;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+
+  color: #f2f2f2;
+}
+
+.record-note {
+  padding-left: 16px;
+}
+
+.record-note {
+  margin-top: 9px;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #858b8f;
+}
+
+.record-block {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.record-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(160px, 1fr));
+
+  gap: 14px;
+}
+
+/*
+   Each figure gets its own panel. Bare columns separated by rules
+   read as one dense block; boxed, the eye can land on a single
+   number without reading past the others.
+*/
+.record-grid > div {
+  padding: 16px 18px;
+
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.015)
+    );
+}
+
+.record-value {
+  margin-top: 10px;
+
+  font-size: 19px;
+  font-weight: 600;
+
+  color: #f2f2f2;
+}
+
+.record-big {
+  margin-top: 10px;
+
+  font-size: 30px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.record-big em {
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.record-foot {
+  margin-top: 10px;
+
+  font-size: 12px;
+
+  color: #858b8f;
+}
+
+.record-verdict {
+  margin-top: 24px;
+
+  font-size: 14px;
+
+  color: #aeb2b5;
+}
+
+.tone-expired {
+  color: #e15c55;
+}
+
+.tone-urgent {
+  color: #e2622a;
+}
+
+
+/* =========================================================
+   SHELF LIFE BAR
+========================================================= */
+
+.shelf-track {
+  height: 10px;
+
+  margin-top: 28px;
+
+  border-radius: 5px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+}
+
+/*
+   Keyframed from zero rather than transitioned — the record is
+   mounted fresh each time, so there is no previous width for a
+   transition to run from.
+*/
+.shelf-fill {
+  display: block;
+
+  width: var(--pct, 0%);
+
+  height: 100%;
+
+  border-radius: 5px;
+
+  background: #5c6469;
+
+  animation:
+    shelf-grow 0.85s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+
+  animation-delay: 300ms;
+}
+
+@keyframes shelf-grow {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: var(--pct, 0%);
+  }
+}
+
+.shelf-expired {
+  background: #b33227;
+}
+
+.shelf-urgent {
+  background: #e2622a;
+}
+
+.shelf-soon {
+  background: #8a8f93;
+}
+
+.shelf-scale {
+  margin-top: 12px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  font-size: 12px;
+
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   MOVEMENT TRAIL
+========================================================= */
+
+.record-place {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 14px;
+
+  flex-wrap: wrap;
+}
+
+.record-place strong {
+  font-size: 27px;
+  font-weight: 700;
+
+  color: #ffffff;
+}
+
+.record-place span {
+  font-size: 13px;
+
+  color: #858b8f;
+}
+
+.move-list {
+  margin-top: 22px;
+}
+
+.move-row {
+  display: grid;
+
+  grid-template-columns:
+    16px
+    140px
+    minmax(130px, 1fr)
+    minmax(180px, 2fr);
+
+  align-items: center;
+
+  gap: 14px;
+
+  min-height: 46px;
+
+  border-top:
+    1px solid
+    #292d30;
+
+  animation:
+    record-in 0.45s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+
+  animation-delay:
+    calc(var(--m, 0) * 70ms + 420ms);
+}
+
+.move-pip {
+  width: 9px;
+  height: 9px;
+
+  background: #4a5157;
+}
+
+.move-now {
+  background: #e15c55;
+}
+
+.move-at {
+  font-size: 12px;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.move-place {
+  font-size: 14px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+}
+
+.move-note {
+  font-size: 12px;
+
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   LOT REGISTER
+========================================================= */
+
+.lot-register {
+  margin-bottom: 34px;
+
+  animation:
+    result-in 0.42s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+.register-head {
+  padding-bottom: 26px;
+
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 40px;
+
+  flex-wrap: wrap;
+
+  border-bottom:
+    1px solid
+    #2c3033;
+}
+
+.register-label {
+  margin-bottom: 8px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.8px;
+
+  color: #d0b35c;
+}
+
+.lot-register h2 {
+  margin: 0;
+
+  font-size: 44px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  letter-spacing: -1.4px;
+
+  color: #ffffff;
+}
+
+.register-sub {
+  margin-top: 12px;
+
+  font-size: 13px;
+
+  color: #858b8f;
+}
+
+.register-stats {
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 52px;
+
+  flex-wrap: wrap;
+}
+
+.register-stats dt {
+  margin-bottom: 10px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.4px;
+
+  color: #858b8f;
+
+  text-align: right;
+}
+
+.register-stats dd {
+  font-size: 30px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  text-align: right;
+}
+
+.register-risk {
+  color: #e15c55;
+}
+
+.register-bar {
+  padding: 24px 0 14px;
+
+  display: flex;
+
+  align-items: baseline;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  flex-wrap: wrap;
+}
+
+.register-title {
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 1.6px;
+
+  color: #f2f2f2;
+}
+
+.register-hint {
+  font-size: 12px;
+
+  color: #858b8f;
+}
+
+/* Eight columns will not fold, so the table scrolls on its own */
+.register-scroll {
+  overflow-x: auto;
+}
+
+.register-table {
+  min-width: 880px;
+}
+
+.register-row {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(170px, 1.6fr)
+    132px
+    128px
+    minmax(130px, 1fr)
+    100px
+    116px;
+
+  align-items: center;
+
+  gap: 22px;
+
+  text-align: left;
+}
+
+.register-header {
+  padding-bottom: 12px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+/*
+   Rows are buttons so they are reachable by keyboard; the reset
+   strips the chrome that brings with it.
+*/
+.register-row:not(.register-header) {
+  position: relative;
+
+  min-height: 70px;
+
+  padding: 0 10px 0 20px;
+
+  border: none;
+
+  border-bottom:
+    1px solid
+    #26292c;
+
+  border-radius: 6px;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  color: #d7d9da;
+
+  cursor: pointer;
+
+  /*
+     A wash rather than a flat fill: the tint is strongest at the
+     severity bar and fades out across the row, so urgency reads
+     from the left edge without colouring the figures themselves.
+  */
+  /*
+     Held at full strength across two thirds of the row before it
+     releases, rather than fading from the first pixel — at 62%
+     the tint was already gone by the QUALITY column, which is
+     where it needed to still be readable.
+  */
+  background:
+    linear-gradient(
+      90deg,
+      var(--wash, transparent) 0%,
+      var(--wash, transparent) 58%,
+      transparent 100%
+    );
+
+  transition:
+    background 0.18s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.register-row.lot-expired {
+  --wash: rgba(196, 56, 44, 0.3);
+}
+
+.register-row.lot-urgent {
+  --wash: rgba(233, 108, 46, 0.26);
+}
+
+.register-row.lot-soon {
+  --wash: rgba(255, 255, 255, 0.07);
+}
+
+.register-row:not(.register-header):hover {
+  background:
+    linear-gradient(
+      90deg,
+      var(--wash, transparent) 0%,
+      var(--wash, transparent) 58%,
+      transparent 100%
+    ),
+    rgba(255, 255, 255, 0.07);
+}
+
+.register-row.lot-open {
+  --wash: rgba(208, 179, 92, 0.3);
+}
+
+/*
+   The severity bar carries the same four bands as the age column,
+   so the left edge of the table reads as a queue on its own.
+*/
+.register-row:not(.register-header)::before {
+  content: "";
+
+  position: absolute;
+
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+
+  width: 5px;
+
+  border-radius: 3px;
+
+  background:
+    linear-gradient(180deg, #454b50, #2f3438);
+}
+
+.lot-expired::before {
+  background:
+    linear-gradient(180deg, #d0453a, #8f2b24);
+}
+
+.lot-urgent::before {
+  background:
+    linear-gradient(180deg, #f07a3d, #c2521f);
+}
+
+.lot-soon::before {
+  background:
+    linear-gradient(180deg, #767d82, #4d5459);
+}
+
+.lot-id {
+  color: #ffffff;
+
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+}
+
+.lot-qty {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 8px;
+}
+
+.lot-qty b {
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.lot-qty b em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+/* Hard colour stop, so no extra element is needed for the fill */
+.lot-qty i {
+  width: 100%;
+  height: 4px;
+
+  border-radius: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--bar, #6a7378) var(--w, 0%),
+      rgba(255, 255, 255, 0.09) var(--w, 0%)
+    );
+}
+
+.lot-expired .lot-qty i {
+  --bar: #d0453a;
+}
+
+.lot-urgent .lot-qty i {
+  --bar: #e2622a;
+}
+
+.lot-when {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.lot-when b {
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #d7d9da;
+}
+
+.lot-when em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+
+  color: #858b8f;
+}
+
+.lot-expired .lot-when em {
+  color: #e15c55;
+}
+
+.lot-urgent .lot-when em {
+  color: #e2622a;
+}
+
+.lot-loc {
+  color: #aeb2b5;
+
+  font-size: 12px;
+}
+
+/*
+   Four states used to be four different boxes — outlined, red
+   outlined, red filled — which put three competing treatments in
+   one narrow column. Now every tag is the same chip and only the
+   dot carries the state, so the column reads as one thing.
+*/
+.quality-tag {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 5px 10px 5px 9px;
+
+  border:
+    1px solid
+    #34383c;
+
+  border-radius: 5px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+
+  color: #c8cbcd;
+
+  white-space: nowrap;
+}
+
+.quality-tag::before {
+  content: "";
+
+  width: 6px;
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: var(--dot, #8a9196);
+}
+
+.q-accept {
+  --dot: #39b975;
+}
+
+.q-trial {
+  --dot: #a57ce0;
+}
+
+.q-review {
+  --dot: #e1b43a;
+}
+
+.q-reject {
+  --dot: #e15c55;
+}
+
+.q-matched {
+  --dot: #39b975;
+}
+
+.q-flag {
+  --dot: #e15c55;
+}
+
+.lot-check {
+  font-size: 12px;
+  font-weight: 500;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.check-flag {
+  color: #e8695f;
+
+  font-weight: 700;
+}
+
+.register-row:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -2px;
+}
+
+.finder-empty {
+  margin-top: 18px;
+
+  font-size: 13px;
+
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   DASHBOARD HEADING
+========================================================= */
+
+.dashboard-heading {
+  display: flex;
+
+  align-items: flex-end;
+
+  justify-content: space-between;
+
+  gap: 26px;
+
+  flex-wrap: wrap;
+
+  margin-bottom: 14px;
+}
+
+.heading-main {
+  display: flex;
+
+  align-items: stretch;
+
+  gap: 18px;
+
+  min-width: 0;
+
+  animation:
+    heading-in 0.5s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes heading-in {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: none;
+  }
+}
+
+/*
+   Draws itself downward on every tab change — the one moving
+   element, so the eye lands on the new title without the whole
+   block having to shout.
+*/
+.heading-rule {
+  width: 3px;
+
+  flex-shrink: 0;
+
+  border-radius: 2px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #d4b65c 0%,
+      rgba(212, 182, 92, 0.05) 100%
+    );
+
+  transform-origin: top center;
+
+  animation:
+    rule-draw 0.6s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes rule-draw {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.eyebrow {
+  margin:
+    0 0 9px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 2px;
+
+  color: #d4b65c;
+}
+
+.eyebrow b {
+  font-size: 13px;
+
+  font-variant-numeric: tabular-nums;
+
+  opacity: 0.75;
+}
+
+.eyebrow i {
+  width: 16px;
+  height: 1px;
+
+  background: currentColor;
+
+  opacity: 0.45;
+}
+
+.dashboard-heading h1 {
+  margin: 0;
+
+  font-size:
+    clamp(
+      27px,
+      2.6vw,
+      37px
+    );
+
+  line-height: 1.08;
+
+  font-weight: 500;
+
+  letter-spacing: -0.9px;
+
+  color: #ffffff;
+}
+
+.subtitle {
+  margin:
+    10px 0 0;
+
+  font-size: 14px;
+
+  color: #a5aaae;
+}
+
+.live-status {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 10px 14px;
+
+  border:
+    1px solid
+    #33373a;
+
+  border-radius: 20px;
+
+  background: #17191b;
+
+  color: #d2d5d7;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #31b36b;
+}
+
+
+/* =========================================================
+   METRICS
+========================================================= */
+
+.metrics-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 18px;
+
+  margin-bottom: 28px;
+}
+
+.metric-card {
+  position: relative;
+
+  min-height: 175px;
+
+  padding: 25px;
+
+  /* It is a filter control now, so strip the UA button chrome */
+  font-family: inherit;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  background-color: #181a1c;
+
+  overflow: hidden;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 6px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  box-shadow:
+    0
+    8px
+    25px
+    rgba(0, 0, 0, 0.20);
+}
+
+.metric-top {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.metric-card p {
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #aeb2b5;
+}
+
+/* Direction from the arrow, judgement from the colour */
+.metric-delta {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 3px 8px;
+
+  border-radius: 11px;
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-delta svg {
+  width: 8px;
+  height: 7px;
+
+  fill: currentColor;
+}
+
+.delta-flip {
+  transform: rotate(180deg);
+}
+
+.delta-good {
+  color: #4cc98a;
+}
+
+.delta-bad {
+  color: #e8695f;
+}
+
+.metric-card strong {
+  display: block;
+
+  margin:
+    18px
+    0
+    10px;
+
+  font-size: 38px;
+
+  font-weight: 500;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-card strong em {
+  margin-left: 7px;
+
+  font-style: normal;
+  font-size: 16px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.metric-warn strong {
+  color: #e3b33b;
+}
+
+.metric-bad strong {
+  color: #e35b55;
+}
+
+.metric-note {
+  font-size: 12px;
+
+  color: #858b8f;
+}
+
+/* Share of the whole, so the figure has something to sit against */
+/*
+   Notches rather than a solid track: a countable meter reads as a
+   share at a glance, where a plain bar needs its caption.
+*/
+.metric-meter {
+  margin-top: 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+}
+
+.meter-ticks {
+  flex: 1;
+
+  display: flex;
+
+  gap: 2px;
+
+  min-width: 0;
+}
+
+/*
+   Only the unlit notches take the track colour. Painting every i
+   and relying on .tick-on to win it back does not work: the
+   theme's own selector is a level more specific and repaints the
+   lit ones grey — which is exactly what happened in light mode.
+*/
+.meter-ticks i {
+  flex: 1;
+
+  height: 15px;
+
+  border-radius: 1px;
+
+  background:
+    rgba(255, 255, 255, 0.09);
+
+  transition: background 0.2s ease;
+}
+
+.meter-ticks i.tick-on {
+  background: var(--accent, #6a7378);
+}
+
+.metric-meter b {
+  font-size: 16px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+
+  font-variant-numeric: tabular-nums;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   PANELS
+========================================================= */
+
+.dashboard-panels {
+  display: grid;
+
+  grid-template-columns:
+    1.25fr
+    0.75fr;
+
+  gap: 22px;
+
+  margin-bottom: 28px;
+}
+
+.panel {
+  background-color: #181a1c;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 6px;
+
+  padding: 28px;
+
+  box-shadow:
+    0
+    8px
+    25px
+    rgba(0, 0, 0, 0.20);
+}
+
+.panel-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 26px;
+}
+
+.panel-label {
+  margin:
+    0 0 7px;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.7px;
+
+  color: #d0b35c;
+}
+
+.panel h2 {
+  margin: 0;
+
+  font-size: 22px;
+
+  font-weight: 500;
+
+  color: #ffffff;
+}
+
+.period-button {
+  padding: 9px 13px;
+
+  border:
+    1px solid
+    #3b3f42;
+
+  border-radius: 6px;
+
+  background: #131516;
+
+  color: #dddddd;
+
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-header,
+.table-row {
+  display: grid;
+
+  grid-template-columns:
+    1.6fr
+    0.6fr
+    0.8fr;
+
+  align-items: center;
+}
+
+.table-header {
+  padding-bottom: 11px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  color: #858b8f;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+}
+
+.table-row {
+  position: relative;
+
+  min-height: 58px;
+
+  border-bottom:
+    1px solid
+    #292d30;
+
+  color: #d7d9da;
+
+  font-size: 13px;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row > span:nth-child(2),
+.table-row > span:last-child {
+  color: #f2f2f2;
+
+  font-weight: 600;
+}
+
+.table-row > span:last-child {
+  text-align: right;
+}
+
+.table-row i {
+  display: inline-block;
+
+  width: 8px;
+  height: 8px;
+
+  margin-right: 10px;
+
+  border-radius: 50%;
+}
+
+.green-dot {
+  background: #30aa66;
+}
+
+.yellow-dot {
+  background: #d8a833;
+}
+
+.red-dot {
+  background: #d4524c;
+}
+
+
+/* =========================================================
+   OPERATIONS
+========================================================= */
+
+.operation-row {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    42px
+    1fr
+    auto;
+
+  align-items: center;
+
+  gap: 13px;
+
+  min-height: 72px;
+
+  border-bottom:
+    1px solid
+    #292d30;
+}
+
+.operation-row:last-child {
+  border-bottom: none;
+}
+
+.operation-row > div:nth-child(2) {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.operation-row strong {
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #f3f3f3;
+}
+
+.operation-row span {
+  font-size: 11px;
+
+  color: #858b8f;
+}
+
+.operation-icon {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+.operation-icon svg {
+  width: 17px;
+  height: 17px;
+
+  display: block;
+}
+
+.green-icon {
+  color: #39b975;
+  background: rgba(57, 185, 117, 0.12);
+}
+
+.yellow-icon {
+  color: #e1b43a;
+  background: rgba(225, 180, 58, 0.12);
+}
+
+.purple-icon {
+  color: #a57ce0;
+  background: rgba(165, 124, 224, 0.12);
+}
+
+.red-icon {
+  color: #e15c55;
+  background: rgba(225, 92, 85, 0.12);
+}
+
+.quantity {
+  font-size: 14px;
+}
+
+.green-quantity {
+  color: #39b975;
+}
+
+.yellow-quantity {
+  color: #e1b43a;
+}
+
+.purple-quantity {
+  color: #a57ce0;
+}
+
+.red-quantity {
+  color: #e15c55;
+}
+
+
+/* =========================================================
+   EXPIRY HORIZON
+========================================================= */
+
+.horizon-panel {
+  margin-bottom: 28px;
+
+  padding: 26px 28px 24px;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 8px;
+
+  background-color: #181a1c;
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.horizon-head {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 30px;
+
+  flex-wrap: wrap;
+}
+
+.horizon-head h2 {
+  margin: 0;
+
+  font-size: 22px;
+  font-weight: 500;
+
+  color: #ffffff;
+}
+
+.horizon-control {
+  display: flex;
+
+  align-items: center;
+
+  gap: 18px;
+
+  flex: 0 1 400px;
+}
+
+/*
+   appearance: none on the input, then track and thumb drawn per
+   engine — WebKit and Gecko expose different pseudo-elements and
+   will not accept them in one selector list.
+*/
+.horizon-control input {
+  flex: 1;
+
+  height: 22px;
+
+  appearance: none;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.horizon-control input::-webkit-slider-runnable-track {
+  height: 6px;
+
+  border-radius: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #d0b35c var(--fill, 0%),
+      rgba(255, 255, 255, 0.1) var(--fill, 0%)
+    );
+}
+
+.horizon-control input::-moz-range-track {
+  height: 6px;
+
+  border-radius: 3px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #d0b35c var(--fill, 0%),
+      rgba(255, 255, 255, 0.1) var(--fill, 0%)
+    );
+}
+
+.horizon-control input::-webkit-slider-thumb {
+  appearance: none;
+
+  width: 18px;
+  height: 18px;
+
+  margin-top: -6px;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.45);
+}
+
+.horizon-control input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.45);
+}
+
+.horizon-control input:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: 4px;
+}
+
+.horizon-value {
+  min-width: 74px;
+
+  color: #ffffff;
+
+  font-size: 24px;
+  font-weight: 600;
+
+  font-variant-numeric: tabular-nums;
+
+  text-align: right;
+
+  white-space: nowrap;
+}
+
+.horizon-value em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.horizon-lede {
+  max-width: 620px;
+
+  margin-top: 14px;
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  color: #858b8f;
+}
+
+.horizon-head-slider {
+  margin-top: 22px;
+
+  padding-top: 22px;
+
+  border-top:
+    1px solid
+    #2c3033;
+}
+
+.horizon-head-slider .horizon-control {
+  flex: 1 1 100%;
+}
+
+.horizon-stats {
+  margin-top: 26px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(140px, 1fr));
+
+  gap: 24px;
+}
+
+.horizon-stats > div {
+  padding: 18px 20px;
+
+  border-radius: 8px;
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.015)
+    );
+}
+
+.horizon-stats strong {
+  display: block;
+
+  margin-top: 10px;
+
+  font-size: 27px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.horizon-stats em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.horizon-track {
+  height: 8px;
+
+  margin-top: 22px;
+
+  border-radius: 4px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+}
+
+.horizon-track i {
+  display: block;
+
+  width: var(--pct, 0%);
+
+  height: 100%;
+
+  border-radius: 4px;
+
+  background: #e2622a;
+
+  transition:
+    width 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.horizon-note {
+  margin-top: 14px;
+
+  font-size: 13px;
+
+  color: #858b8f;
+}
+
+.horizon-chips {
+  margin-top: 18px;
+
+  display: flex;
+
+  gap: 10px;
+
+  flex-wrap: wrap;
+}
+
+.horizon-chip {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 6px 11px;
+
+  border:
+    1px solid
+    #3b3f42;
+
+  border-radius: 16px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #d7d9da;
+}
+
+.horizon-chip i {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.hz-expired {
+  border-color: #8f2b24;
+}
+
+.hz-expired i {
+  color: #e15c55;
+}
+
+.hz-urgent {
+  border-color: #a2481f;
+}
+
+.hz-urgent i {
+  color: #e2622a;
+}
+
+
+/* =========================================================
+   CHARTS
+
+   Slots are declared once as roles and referenced by name, so the
+   light and dark steps swap in one place. Both sets were run
+   through the palette validator against their own surface: the
+   dark steps clear every gate on #181a1c, the light steps clear
+   every gate on #ffffff bar a sub-3:1 contrast warning, which the
+   legend's visible labels are the documented relief for.
+========================================================= */
+
+.viz {
+  --viz-saleable: #1baf7a;
+  --viz-review: #eda100;
+  --viz-reject: #e34948;
+  --viz-trial: #4a3aa7;
+
+  --viz-surface: #ffffff;
+  --viz-track: #e8e6e1;
+
+  /* Ring gradient runs lit -> base -> deep, all one hue */
+  --viz-saleable-lit: #5fe0ad;
+  --viz-review-lit: #ffcf6b;
+  --viz-reject-lit: #ff9b99;
+
+  --viz-trial-lit: #7a6ad0;
+
+  --viz-saleable-deep: #12784f;
+  --viz-review-deep: #a86f00;
+  --viz-reject-deep: #a32e2d;
+  --viz-trial-deep: #2e2372;
+
+  /*
+     A glint past lit and a shade past deep, so the ring gradient has
+     somewhere to travel. These sit outside the validated series
+     steps on purpose: they are shading on one hue, never an identity,
+     and nothing is ever labelled by them.
+  */
+  --viz-saleable-glint: #9fecce;
+  --viz-review-glint: #ffe2a6;
+  --viz-reject-glint: #ffc3c2;
+
+  --viz-saleable-shade: #0c4e33;
+  --viz-review-shade: #6d4800;
+  --viz-reject-shade: #6a1e1d;
+}
+
+.dashboard-page.dark-mode .viz {
+  --viz-saleable: #199e70;
+  --viz-review: #c98500;
+  --viz-reject: #e66767;
+  --viz-trial: #9085e9;
+
+  --viz-surface: #181a1c;
+  --viz-track: rgba(255, 255, 255, 0.09);
+
+  --viz-saleable-lit: #4ef0b4;
+  --viz-review-lit: #ffc75c;
+  --viz-reject-lit: #ffb0ae;
+
+  --viz-trial-lit: #b3aaff;
+
+  --viz-saleable-deep: #0d6448;
+  --viz-review-deep: #8a5a00;
+  --viz-reject-deep: #a83f3f;
+  --viz-trial-deep: #5f52b8;
+
+  --viz-saleable-glint: #95f6d2;
+  --viz-review-glint: #ffdd9d;
+  --viz-reject-glint: #ffd0ce;
+
+  --viz-saleable-shade: #094431;
+  --viz-review-shade: #5e3d00;
+  --viz-reject-shade: #722b2b;
+}
+
+.panel-side {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
+   DONUT
+========================================================= */
+
+.donut-wrap {
+  display: flex;
+
+  align-items: center;
+
+  gap: 30px;
+
+  flex-wrap: wrap;
+}
+
+/*
+   Perspective on the wrapper, preserve-3d on the stage: the wall
+   copies are pushed back in Z and only read as a solid side once
+   the stage itself is tilted.
+*/
+.donut-figure {
+  position: relative;
+
+  width: 244px;
+  height: 208px;
+
+  flex-shrink: 0;
+
+  display: grid;
+
+  place-items: center;
+
+  perspective: 720px;
+}
+
+/*
+   A blurred ellipse on the floor. The extrusion alone reads as a
+   thick ring; a contact shadow is what makes it read as an object
+   resting on the panel.
+*/
+.donut-figure::before {
+  content: "";
+
+  position: absolute;
+
+  left: 50%;
+  top: 62%;
+
+  width: 226px;
+  height: 62px;
+
+  transform:
+    translate(-50%, -50%);
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.28) 45%,
+      transparent 72%
+    );
+
+  filter: blur(9px);
+
+  pointer-events: none;
+}
+
+.donut-stage {
+  position: relative;
+
+  width: 244px;
+  height: 244px;
+
+  transform-style: preserve-3d;
+
+  transform:
+    rotateX(52deg);
+
+  animation:
+    disc-tilt 0.9s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    140ms both;
+}
+
+@keyframes disc-tilt {
+  from {
+    opacity: 0;
+
+    transform:
+      rotateX(88deg)
+      scale(0.86);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      rotateX(52deg)
+      scale(1);
+  }
+}
+
+.donut-wall,
+.donut-top {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+}
+
+/* Carries the gradients only; nothing is drawn from it */
+.donut-defs {
+  position: absolute;
+
+  width: 0;
+  height: 0;
+
+  pointer-events: none;
+}
+
+/*
+   Each copy sits one pixel deeper and is darkened, so the stack
+   shades from the lit top face down into the disc.
+*/
+.donut-wall {
+  transform:
+    translateZ(calc(var(--d) * -1.2px));
+
+  /*
+     Falloff is gentler than before because the tallest segment is
+     now 31 layers deep; the old rate bottomed out to black.
+  */
+  filter:
+    brightness(
+      calc(0.72 - var(--d) * 0.0085)
+    );
+}
+
+.donut-top {
+  transform: translateZ(1px);
+}
+
+.donut-arc {
+  cursor: pointer;
+
+  /* transform carries the pull-out, so it has to ease too */
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.arc-dim {
+  opacity: 0.24;
+}
+
+.donut-top .arc-saleable {
+  filter:
+    drop-shadow(0 0 9px rgba(78, 240, 180, 0.42));
+}
+
+.donut-top .arc-review {
+  filter:
+    drop-shadow(0 0 9px rgba(255, 199, 92, 0.45));
+}
+
+.donut-top .arc-reject {
+  filter:
+    drop-shadow(0 0 9px rgba(255, 176, 174, 0.45));
+}
+
+.donut-top .arc-trial {
+  filter:
+    drop-shadow(0 0 9px rgba(179, 170, 255, 0.45));
+}
+
+/* Flat and centred on the ellipse, not on the square stage */
+.donut-centre {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 6px;
+
+  pointer-events: none;
+
+  text-align: center;
+}
+
+.donut-centre strong {
+  font-size: 26px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  text-shadow:
+    0 2px 10px
+    rgba(0, 0, 0, 0.55);
+}
+
+.donut-centre strong em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #9aa0a4;
+}
+
+.donut-centre span {
+  max-width: 118px;
+
+  font-size: 10px;
+  font-weight: 600;
+
+  letter-spacing: 0.4px;
+
+  color: #9aa0a4;
+
+  text-shadow:
+    0 2px 8px
+    rgba(0, 0, 0, 0.55);
+}
+
+
+/* =========================================================
+   COMPOSITION CURVES
+========================================================= */
+
+.curve-chart {
+  position: relative;
+
+  margin-bottom: 22px;
+
+  /* Crosshair, because the pointer targets a position on the axis
+     rather than any one shape. */
+  cursor: crosshair;
+}
+
+.curve-chart svg {
+  width: 100%;
+  height: auto;
+
+  display: block;
+
+  overflow: visible;
+}
+
+/*
+   Curves overlap by design, so they carry a little transparency
+   and a soft glow — the shoulders read through each other rather
+   than one flatly covering the next.
+*/
+.bell {
+  opacity: 0.9;
+
+  animation:
+    bell-rise 0.7s ease both;
+
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+@keyframes bell-rise {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.9;
+  }
+}
+
+/*
+   Lit by class rather than :hover — the pointer never actually
+   touches most of these shapes, since the nearest-curve layer sits
+   over the whole plot and the tails are a pixel tall.
+*/
+.bell-on {
+  opacity: 1;
+
+  filter:
+    drop-shadow(0 0 16px var(--c));
+}
+
+.bell-dim {
+  opacity: 0.2;
+}
+
+/* ---- hover marker ---- */
+
+/* Grows up from the baseline, so the eye is led to the peak */
+.cross-line {
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+
+  transform-box: view-box;
+
+  animation:
+    cross-rise 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes cross-rise {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* A ping that keeps repeating, so the marker reads as live */
+.cross-halo {
+  opacity: 0.28;
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  animation:
+    halo-ping 1.8s ease-out infinite;
+}
+
+@keyframes halo-ping {
+  0% {
+    opacity: 0.42;
+    transform: scale(0.55);
+  }
+
+  70% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+/* 2px surface ring, so the dot holds its edge over the fill */
+.cross-dot {
+  stroke: #181a1c;
+  stroke-width: 2.5;
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  animation:
+    dot-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes dot-pop {
+  from {
+    transform: scale(0);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+/* The tonnage the percent label cannot carry on its own */
+.bell-mt {
+  fill: #9aa1a6;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.7px;
+  font-variant-numeric: tabular-nums;
+
+  transform-box: fill-box;
+  transform-origin: center;
+
+  animation:
+    mt-in 0.28s ease both;
+}
+
+@keyframes mt-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bell-value {
+  fill: #ffffff;
+
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+
+  font-variant-numeric: tabular-nums;
+
+  transition:
+    font-size 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.value-on {
+  font-size: 21px;
+}
+
+.value-dim {
+  opacity: 0.25;
+}
+
+.curve-legend {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(178px, 1fr));
+
+  gap: 2px;
+
+  margin-top: 14px;
+}
+
+.curve-key {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 7px 9px;
+
+  border: none;
+
+  border-radius: 5px;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition: background 0.18s ease;
+}
+
+.curve-key:hover,
+.curve-key-on {
+  background:
+    rgba(255, 255, 255, 0.06);
+}
+
+.curve-key i {
+  width: 10px;
+  height: 10px;
+
+  flex-shrink: 0;
+
+  border-radius: 3px;
+}
+
+.curve-key b {
+  flex: 1;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  color: #d7d9da;
+
+  white-space: nowrap;
+}
+
+.curve-key span {
+  font-size: 11px;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.curve-key:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -2px;
+}
+
+.bell-name {
+  fill: #858b8f;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+}
+
+/* The angled names hang below the plot, so the box needs the room */
+.curve-chart {
+  padding-bottom: 4px;
+}
+
+.panels-wide-first {
+  grid-template-columns:
+    1.45fr
+    0.55fr;
+}
+
+
+/* =========================================================
+   LEGEND
+========================================================= *//* =========================================================
+   LEGEND
+========================================================= */
+
+.donut-legend {
+  flex: 1;
+
+  min-width: 210px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.legend-row {
+  display: grid;
+
+  grid-template-columns: 10px 1fr auto;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 10px 10px 10px 8px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+
+  transition: background 0.18s ease;
+}
+
+.legend-on {
+  background:
+    rgba(255, 255, 255, 0.05);
+}
+
+/* Identity rides a swatch beside the text, never the text itself */
+.legend-key {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 3px;
+
+  background: var(--viz-track);
+}
+
+.key-saleable {
+  background: var(--viz-saleable);
+}
+
+.key-review {
+  background: var(--viz-review);
+}
+
+.key-reject {
+  background: var(--viz-reject);
+}
+
+.key-trial {
+  background: var(--viz-trial);
+}
+
+.legend-row dt {
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+}
+
+.legend-row dt small {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 11px;
+  font-weight: 400;
+
+  color: #858b8f;
+}
+
+.legend-row dd {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 5px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  white-space: nowrap;
+}
+
+.legend-row dd em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.legend-row dd b {
+  min-width: 46px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858b8f;
+
+  text-align: right;
+}
+
+
+/* =========================================================
+   RECONCILIATION RAIL
+========================================================= */
+
+.hero-saleable {
+  color: var(--viz-saleable);
+}
+
+.hero-review {
+  color: var(--viz-review);
+}
+
+.hero-reject {
+  color: var(--viz-reject);
+}
+
+/* =========================================================
+   RECONCILIATION RINGS
+========================================================= */
+
+.rings-figure {
+  position: relative;
+
+  width: 246px;
+  height: 246px;
+
+  flex-shrink: 0;
+}
+
+.rings-figure svg {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  overflow: visible;
+}
+
+.ring-track {
+  stroke: var(--viz-track);
+}
+
+/*
+   Drawn on from nothing. Each ring is a separate element, so they
+   can be staggered — the book fills, then the two exception rings
+   answer it.
+*/
+.ring-arc {
+  stroke-dasharray: 0 var(--rest);
+
+  cursor: pointer;
+
+  animation:
+    ring-draw 1s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+
+  animation-delay:
+    calc(var(--i) * 150ms + 160ms);
+
+  transition:
+    opacity 0.2s ease,
+    filter 0.2s ease;
+}
+
+@keyframes ring-draw {
+  from {
+    stroke-dasharray: 0 var(--rest);
+  }
+
+  to {
+    stroke-dasharray: var(--len) var(--rest);
+  }
+}
+
+/*
+   The glow is per-ring rather than currentColor: the stroke is a
+   gradient, so there is no single colour to inherit.
+*/
+.ring-saleable {
+  filter:
+    drop-shadow(0 0 7px rgba(53, 213, 155, 0.4));
+}
+
+.ring-review {
+  filter:
+    drop-shadow(0 0 7px rgba(243, 181, 60, 0.42));
+}
+
+.ring-reject {
+  filter:
+    drop-shadow(0 0 7px rgba(255, 157, 157, 0.42));
+}
+
+.ring-arc:hover {
+  filter:
+    drop-shadow(0 0 13px rgba(255, 255, 255, 0.32));
+}
+
+.ring-dim {
+  opacity: 0.22;
+
+  filter: none;
+}
+
+.rings-centre {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  pointer-events: none;
+
+  text-align: center;
+}
+
+.rings-centre strong {
+  font-size: 42px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  letter-spacing: -1.5px;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  transition: color 0.2s ease;
+}
+
+.rings-centre strong em {
+  margin-left: 2px;
+
+  font-style: normal;
+  font-size: 19px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.rings-centre span {
+  max-width: 112px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0.4px;
+
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   RECONCILIATION GAUGE
+========================================================= */
+
+.gauge-wrap {
+  display: flex;
+
+  align-items: center;
+
+  gap: 34px;
+
+  flex-wrap: wrap;
+}
+
+.gauge-figure {
+  position: relative;
+
+  width: 236px;
+  height: 236px;
+
+  flex-shrink: 0;
+}
+
+.gauge-figure svg {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  overflow: visible;
+}
+
+.gauge-track {
+  stroke: var(--viz-track);
+}
+
+/*
+   Drawn on rather than transitioned: the arc mounts with the panel,
+   so there is no previous length for a transition to run from.
+*/
+.gauge-seg {
+  stroke-dasharray: 0 var(--rest);
+
+  cursor: pointer;
+
+  animation:
+    gauge-draw 0.9s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+
+  animation-delay:
+    calc(var(--i) * 130ms + 140ms);
+
+  transition:
+    opacity 0.2s ease,
+    stroke-width 0.2s ease;
+}
+
+@keyframes gauge-draw {
+  from {
+    stroke-dasharray: 0 var(--rest);
+  }
+
+  to {
+    stroke-dasharray: var(--len) var(--rest);
+  }
+}
+
+.gauge-seg:hover {
+  stroke-width: 22;
+}
+
+.gseg-dim {
+  opacity: 0.26;
+}
+
+.gseg-saleable {
+  stroke: var(--viz-saleable);
+}
+
+.gseg-review {
+  stroke: var(--viz-review);
+}
+
+.gseg-reject {
+  stroke: var(--viz-reject);
+}
+
+/*
+   The open quarter sits at the bottom, so the figure can sit dead
+   centre without the arc crowding it.
+*/
+.gauge-centre {
+  position: absolute;
+
+  inset: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  pointer-events: none;
+
+  text-align: center;
+}
+
+.gauge-centre strong {
+  font-size: 46px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  letter-spacing: -1.6px;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  transition: color 0.2s ease;
+}
+
+.gauge-centre strong em {
+  margin-left: 3px;
+
+  font-style: normal;
+  font-size: 20px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.gauge-centre span {
+  max-width: 132px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  letter-spacing: 0.4px;
+
+  color: #858b8f;
+}
+
+.gauge-wrap .rail-legend {
+  flex: 1;
+
+  min-width: 230px;
+}
+
+
+.rail-legend {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.rail-legend .legend-row {
+  width: 100%;
+
+  border: none;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  text-align: left;
+}
+
+.legend-name {
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+}
+
+.legend-name small {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 11px;
+  font-weight: 400;
+
+  color: #858b8f;
+}
+
+.legend-figs {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 5px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+
+  white-space: nowrap;
+}
+
+.legend-figs em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.legend-figs b {
+  min-width: 74px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858b8f;
+
+  text-align: right;
+}
+
+.rail-legend .legend-row:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -2px;
+}
+
+/* =========================================================
+   STOCK EXPLORER
+
+   Same panel language as Exceptions, so the two read as a pair:
+   this one is the whole plant, that one is only what is wrong.
+========================================================= */
+
+.explorer-panel {
+  margin-bottom: 28px;
+
+  padding: 28px;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 8px;
+
+  background-color: #181a1c;
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.explorer-panel .lot-finder {
+  margin: 22px 0;
+
+  padding-bottom: 22px;
+}
+
+.grade-grid {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.grade-row {
+  display: grid;
+
+  grid-template-columns:
+    110px
+    minmax(180px, 1fr)
+    80px
+    150px
+    120px;
+
+  align-items: center;
+
+  gap: 18px;
+
+  text-align: left;
+}
+
+.grade-head {
+  padding-bottom: 12px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+.grade-head span:nth-child(3),
+.grade-head span:nth-child(4),
+.grade-head span:nth-child(5),
+.grade-fig {
+  text-align: right;
+}
+
+/* Rows are buttons: each one opens that grade's register */
+.grade-row:not(.grade-head) {
+  position: relative;
+
+  min-height: 58px;
+
+  padding: 0 10px 0 16px;
+
+  border: none;
+
+  border-bottom:
+    1px solid
+    #26292c;
+
+  border-radius: 6px;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  cursor: pointer;
+
+  transition: background 0.18s ease;
+}
+
+.grade-row:not(.grade-head)::before {
+  content: "";
+
+  position: absolute;
+
+  top: 14px;
+  bottom: 14px;
+  left: 0;
+
+  width: 4px;
+
+  border-radius: 2px;
+
+  background: #3d4348;
+
+  transition: background 0.18s ease;
+}
+
+.grade-row:not(.grade-head):hover {
+  background:
+    rgba(255, 255, 255, 0.055);
+}
+
+.grade-row:not(.grade-head):hover::before {
+  background: #d0b35c;
+}
+
+.grade-row:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -2px;
+}
+
+.grade-code {
+  font-size: 15px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  color: #ffffff;
+}
+
+.grade-name {
+  font-size: 13px;
+
+  color: #aeb2b5;
+}
+
+.grade-fig {
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #f2f2f2;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.grade-fig em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #767c80;
+}
+
+.grade-risk {
+  color: #e8695f;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   EXCEPTION TABLE
+========================================================= */
+
+.exception-panel {
+  margin-bottom: 28px;
+
+  padding: 28px;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 8px;
+
+  background-color: #181a1c;
+
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.exception-panel .lot-finder {
+  margin-bottom: 22px;
+
+  padding-bottom: 22px;
+}
+
+.filter-chip {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  height: 34px;
+
+  padding: 0 8px 0 14px;
+
+  border:
+    1px solid
+    #d0b35c;
+
+  border-radius: 17px;
+
+  background:
+    rgba(208, 179, 92, 0.14);
+
+  color: #e6cd86;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  cursor: pointer;
+}
+
+.filter-chip i {
+  padding: 3px 8px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(208, 179, 92, 0.22);
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.exception-scroll {
+  overflow-x: auto;
+}
+
+.exception-table {
+  min-width: 760px;
+}
+
+.exception-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(160px, 1.4fr)
+    90px
+    120px
+    120px
+    130px
+    minmax(150px, 1fr);
+
+  align-items: center;
+
+  gap: 18px;
+
+  min-height: 56px;
+}
+
+.exception-head {
+  min-height: 0;
+
+  padding-bottom: 12px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+.exception-row:not(.exception-head) {
+  border-bottom:
+    1px solid
+    #26292c;
+}
+
+.ex-id {
+  font-size: 13px;
+  font-weight: 700;
+
+  color: #ffffff;
+
+  letter-spacing: 0.4px;
+}
+
+.ex-grade {
+  font-size: 12px;
+
+  color: #aeb2b5;
+}
+
+.ex-fig {
+  font-size: 14px;
+  font-weight: 600;
+
+  color: #d7d9da;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.ex-fig em {
+  margin-left: 4px;
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #767c80;
+}
+
+.ex-fig s {
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 500;
+
+  color: #767c80;
+}
+
+.ex-off {
+  color: #e8695f;
+
+  font-weight: 700;
+}
+
+.ex-issue {
+  font-size: 12px;
+
+  color: #aeb2b5;
+}
+
+.exception-empty {
+  padding: 26px 0 6px;
+
+  font-size: 13px;
+
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   BAR WIDGET
+========================================================= */
+
+.bar-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 17px;
+}
+
+.bar-row {
+  display: grid;
+
+  grid-template-columns:
+    88px
+    1fr
+    76px;
+
+  align-items: center;
+
+  gap: 13px;
+}
+
+.bar-name {
+  color: #aeb2b5;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.bar-track {
+  height: 9px;
+
+  border-radius: 5px;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  overflow: hidden;
+}
+
+/*
+   Keyframed rather than transitioned: switching tabs remounts the
+   widget, and a transition has no previous value to run from.
+*/
+.bar-fill {
+  display: block;
+
+  width: var(--bar-w, 0%);
+
+  height: 100%;
+
+  border-radius: 5px;
+
+  animation:
+    bar-grow 0.75s
+    cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+}
+
+@keyframes bar-grow {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: var(--bar-w, 0%);
+  }
+}
+
+.bar-green {
+  background:
+    linear-gradient(90deg, #2f8f5b, #39b975);
+}
+
+.bar-yellow {
+  background:
+    linear-gradient(90deg, #b8912a, #e1b43a);
+}
+
+.bar-purple {
+  background:
+    linear-gradient(90deg, #7d5cb8, #a57ce0);
+}
+
+.bar-red {
+  background:
+    linear-gradient(90deg, #b24540, #e15c55);
+}
+
+.bar-value {
+  color: #f2f2f2;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-align: right;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
+   STAT WIDGET
+========================================================= */
+
+.stat-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 1px;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  border-radius: 8px;
+
+  overflow: hidden;
+}
+
+/*
+   The 1px grid gap shows through as hairlines, so each cell only
+   needs its own background — no per-cell border bookkeeping.
+*/
+.stat-cell {
+  padding: 17px 16px;
+
+  background: #181a1c;
+}
+
+.stat-cell p {
+  margin-bottom: 9px;
+
+  color: #92989c;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stat-cell strong {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #ffffff;
+
+  font-size: 23px;
+  font-weight: 500;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-cell strong.warning {
+  color: #e3b33b;
+}
+
+.stat-cell strong.danger {
+  color: #e35b55;
+}
+
+.stat-cell span {
+  color: #858b8f;
+
+  font-size: 11px;
+}
+
+
+/* =========================================================
+   PLACEHOLDER
+========================================================= */
+
+.placeholder-section {
+  min-height: 500px;
+
+  padding: 32px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background-color: #181a1c;
+
+  border:
+    1px solid
+    #2c3033;
+
+  border-radius: 6px;
+
+  box-shadow:
+    0
+    8px
+    25px
+    rgba(0, 0, 0, 0.20);
+}
+
+.placeholder-section h2 {
+  margin:
+    0
+    0
+    12px;
+
+  font-size: 30px;
+
+  font-weight: 500;
+
+  color: #ffffff;
+}
+
+.placeholder-body p {
+  color: #858b8f;
+}
+
+
+/* =========================================================
+   LIGHT MODE
+========================================================= */
+
+.dashboard-page.light-mode {
+  background: #f5f5f3;
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.dashboard-heading h1 {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.subtitle {
+  color: #70777b;
+}
+
+.dashboard-page.light-mode
+.eyebrow {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.live-status {
+  background: #ffffff;
+
+  border-color: #dddddd;
+
+  color: #444444;
+}
+
+.dashboard-page.light-mode
+.metric-card,
+.dashboard-page.light-mode
+.panel,
+.dashboard-page.light-mode
+.placeholder-section {
+  background-color: #ffffff;
+
+  border-color: #e5e5e1;
+
+  box-shadow:
+    0
+    8px
+    25px
+    rgba(0, 0, 0, 0.035);
+}
+
+.dashboard-page.light-mode
+.metric-card p {
+  color: #555555;
+}
+
+.dashboard-page.light-mode
+.metric-card strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.metric-card strong em,
+.dashboard-page.light-mode
+.metric-note,
+.dashboard-page.light-mode
+.metric-share em {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.metric-warn strong {
+  color: #96701a;
+}
+
+.dashboard-page.light-mode
+.metric-bad strong {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.metric-good {
+  --accent: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.metric-warn {
+  --accent: #96701a;
+}
+
+.dashboard-page.light-mode
+.metric-bad {
+  --accent: #b03a30;
+}
+
+.dashboard-page.light-mode
+.metric-delta {
+  background: #f1f1ee;
+}
+
+.dashboard-page.light-mode
+.delta-good {
+  color: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.delta-bad {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.metric-share i {
+  background:
+    linear-gradient(
+      90deg,
+      var(--accent, #9aa0a4) var(--w, 0%),
+      #e3e1dc var(--w, 0%)
+    );
+}
+
+.dashboard-page.light-mode
+.panel-label {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.panel h2 {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.table-header {
+  color: #999999;
+
+  border-color: #eeeeee;
+}
+
+.dashboard-page.light-mode
+.table-row {
+  color: #555555;
+
+  border-color: #eeeeee;
+}
+
+.dashboard-page.light-mode
+.table-row > span:nth-child(2),
+.dashboard-page.light-mode
+.table-row > span:last-child {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.operation-row {
+  border-color: #eeeeee;
+}
+
+.dashboard-page.light-mode
+.operation-row strong {
+  color: #303030;
+}
+
+.dashboard-page.light-mode
+.operation-row span {
+  color: #888888;
+}
+
+.dashboard-page.light-mode
+.horizon-panel {
+  background-color: #ffffff;
+
+  border-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.horizon-head h2,
+.dashboard-page.light-mode
+.horizon-value,
+.dashboard-page.light-mode
+.horizon-stats strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.horizon-value em,
+.dashboard-page.light-mode
+.horizon-stats em,
+.dashboard-page.light-mode
+.horizon-note,
+.dashboard-page.light-mode
+.horizon-chip i {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.horizon-track {
+  background: #e3e1dc;
+}
+
+.dashboard-page.light-mode
+.horizon-track i {
+  background: #c2521f;
+}
+
+.dashboard-page.light-mode
+.horizon-chip {
+  border-color: #dddddd;
+
+  color: #444444;
+}
+
+.dashboard-page.light-mode
+.hz-expired i {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.hz-urgent i {
+  color: #c2521f;
+}
+
+.dashboard-page.light-mode
+.horizon-control input::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(
+      90deg,
+      #927127 var(--fill, 0%),
+      #e3e1dc var(--fill, 0%)
+    );
+}
+
+.dashboard-page.light-mode
+.horizon-control input::-moz-range-track {
+  background:
+    linear-gradient(
+      90deg,
+      #927127 var(--fill, 0%),
+      #e3e1dc var(--fill, 0%)
+    );
+}
+
+.dashboard-page.light-mode
+.horizon-control input::-webkit-slider-thumb {
+  background: #171717;
+}
+
+.dashboard-page.light-mode
+.horizon-control input::-moz-range-thumb {
+  background: #171717;
+}
+
+.dashboard-page.light-mode
+.legend-name {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.legend-figs {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.legend-name small,
+.dashboard-page.light-mode
+.legend-figs em,
+.dashboard-page.light-mode
+.legend-figs b {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.curve-key b {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.curve-key span {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.curve-key:hover,
+.dashboard-page.light-mode
+.curve-key-on {
+  background: #edeff1;
+}
+
+.dashboard-page.light-mode
+.bell-value {
+  fill: #171717;
+}
+
+.dashboard-page.light-mode
+.cross-line {
+  stroke: rgba(0, 0, 0, 0.30);
+}
+
+.dashboard-page.light-mode
+.cross-dot {
+  stroke: #ffffff;
+}
+
+.dashboard-page.light-mode
+.bell-mt {
+  fill: #767676;
+}
+
+.dashboard-page.light-mode
+.bell-name {
+  fill: #767676;
+}
+
+.dashboard-page.light-mode
+.rings-centre strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.rings-centre strong em,
+.dashboard-page.light-mode
+.rings-centre span {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.gauge-centre strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.gauge-centre strong em,
+.dashboard-page.light-mode
+.gauge-centre span {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.donut-centre strong,
+.dashboard-page.light-mode
+.legend-row dd {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.legend-row dt {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.donut-centre strong em,
+.dashboard-page.light-mode
+.donut-centre span,
+.dashboard-page.light-mode
+.legend-row dt small,
+.dashboard-page.light-mode
+.legend-row dd em,
+.dashboard-page.light-mode
+.legend-row dd b,
+.dashboard-page.light-mode
+.panel-side {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.donut-centre strong,
+.dashboard-page.light-mode
+.donut-centre span {
+  text-shadow: none;
+}
+
+.dashboard-page.light-mode
+.legend-on {
+  background: #f2f2ef;
+}
+
+.dashboard-page.light-mode
+.grade-head {
+  border-bottom-color: #e8e6e1;
+
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.grade-row:not(.grade-head) {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.grade-row:not(.grade-head)::before {
+  background: #d2d0cb;
+}
+
+.dashboard-page.light-mode
+.grade-row:not(.grade-head):hover {
+  background: #edeff1;
+}
+
+.dashboard-page.light-mode
+.grade-row:not(.grade-head):hover::before {
+  background: #927127;
+}
+
+.dashboard-page.light-mode
+.grade-code {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.grade-name {
+  color: #666666;
+}
+
+.dashboard-page.light-mode
+.grade-fig {
+  color: #222222;
+}
+
+.dashboard-page.light-mode
+.grade-fig em {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.grade-risk {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.feed-bar,
+.dashboard-page.light-mode
+.explorer-panel,
+.dashboard-page.light-mode
+.exception-panel {
+  background-color: #ffffff;
+
+  border-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.feed-live,
+.dashboard-page.light-mode
+.feed-cell {
+  background:
+    linear-gradient(140deg, #f7f7f5, #fbfbfa);
+}
+
+.dashboard-page.light-mode
+.feed-live-text b {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.feed-live-text em {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.feed-charge {
+  background: #e6e4df;
+}
+
+.dashboard-page.light-mode
+.feed-charge i {
+  background: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.sync-aging .feed-charge i {
+  background: #96701a;
+}
+
+.dashboard-page.light-mode
+.sync-stale .feed-charge i {
+  background: #b03a30;
+}
+
+/* A dark contact shadow would smudge on a white panel */
+.dashboard-page.light-mode
+.donut-figure::before {
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.16) 0%,
+      rgba(0, 0, 0, 0.07) 45%,
+      transparent 72%
+    );
+}
+
+.dashboard-page.light-mode
+.feed-cell strong,
+.dashboard-page.light-mode
+.ex-id {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.feed-cap,
+.dashboard-page.light-mode
+.feed-cell strong em,
+.dashboard-page.light-mode
+.feed-age,
+.dashboard-page.light-mode
+.exception-head,
+.dashboard-page.light-mode
+.exception-empty,
+.dashboard-page.light-mode
+.ex-fig em,
+.dashboard-page.light-mode
+.ex-fig s {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.metric-meter b {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.ex-grade,
+.dashboard-page.light-mode
+.ex-issue {
+  color: #666666;
+}
+
+.dashboard-page.light-mode
+.ex-fig {
+  color: #222222;
+}
+
+.dashboard-page.light-mode
+.ex-off {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.exception-head {
+  border-bottom-color: #e8e6e1;
+}
+
+.dashboard-page.light-mode
+.exception-row:not(.exception-head) {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.meter-ticks i:not(.tick-on) {
+  background: #e6e4df;
+}
+
+.dashboard-page.light-mode
+.filter-chip {
+  border-color: #927127;
+
+  background: rgba(146, 113, 39, 0.1);
+
+  color: #7d6021;
+}
+
+.dashboard-page.light-mode
+.filter-chip i {
+  background: rgba(146, 113, 39, 0.16);
+}
+
+.dashboard-page.light-mode
+.bar-track {
+  background: #eceae5;
+}
+
+.dashboard-page.light-mode
+.bar-name {
+  color: #707070;
+}
+
+.dashboard-page.light-mode
+.bar-value {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.stat-grid {
+  background: #e8e6e1;
+}
+
+.dashboard-page.light-mode
+.stat-cell {
+  background: #ffffff;
+}
+
+.dashboard-page.light-mode
+.stat-cell p {
+  color: #707070;
+}
+
+.dashboard-page.light-mode
+.stat-cell strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.stat-cell span {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.feed-panel {
+  background-color: #ffffff;
+
+  border-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.feed-head {
+  color: #999999;
+
+  border-color: #eeeeee;
+}
+
+.dashboard-page.light-mode
+.feed-name {
+  color: #444444;
+}
+
+.dashboard-page.light-mode
+.feed-lots {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.feed-age {
+  color: #8e8e8e;
+}
+
+/* =========================================================
+   LIGHT MODE ACCENTS
+
+   Two problems in one place. The theme's own ".light-mode
+   .stat-cell strong" (0,3,1) outranks ".stat-cell
+   strong.warning" (0,2,1), so the amber and red figures were
+   repainted dark grey and the colour vanished in light mode.
+   And the dark theme's tints are mixed for a near black
+   ground: #e1b43a on white is about 1.8:1, unreadable. These
+   are the same hues darkened to clear 4.5:1 on white.
+========================================================= */
+
+.dashboard-page.light-mode
+.stat-cell strong.warning,
+
+.dashboard-page.light-mode
+.yellow-quantity {
+  color: #96701a;
+}
+
+.dashboard-page.light-mode
+.stat-cell strong.danger,
+
+.dashboard-page.light-mode
+.red-quantity {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.green-quantity {
+  color: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.purple-quantity {
+  color: #6f4bab;
+}
+
+.dashboard-page.light-mode
+.green-icon {
+  color: #1a6b43;
+  background: rgba(26, 107, 67, 0.1);
+}
+
+.dashboard-page.light-mode
+.yellow-icon {
+  color: #96701a;
+  background: rgba(150, 112, 26, 0.1);
+}
+
+.dashboard-page.light-mode
+.purple-icon {
+  color: #6f4bab;
+  background: rgba(111, 75, 171, 0.1);
+}
+
+.dashboard-page.light-mode
+.red-icon {
+  color: #b03a30;
+  background: rgba(176, 58, 48, 0.1);
+}
+
+.dashboard-page.light-mode
+.green-dot {
+  background: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.yellow-dot {
+  background: #96701a;
+}
+
+.dashboard-page.light-mode
+.red-dot {
+  background: #b03a30;
+}
+
+.dashboard-page.light-mode
+.sync-fresh .sync-pip {
+  color: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.sync-aging .sync-pip {
+  color: #96701a;
+}
+
+.dashboard-page.light-mode
+.sync-stale .sync-pip {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.page-crumb {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.page-crumb b {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.lot-finder {
+  border-bottom-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.finder-field label {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.finder-field select,
+.dashboard-page.light-mode
+.finder-field input {
+  background-color: #ffffff;
+
+  border-color: #dddddd;
+
+  color: #222222;
+}
+
+.dashboard-page.light-mode
+.finder-divider {
+  background: #dddddd;
+}
+
+.dashboard-page.light-mode
+.finder-clear {
+  border-color: #dddddd;
+
+  color: #444444;
+}
+
+.dashboard-page.light-mode
+.finder-clear:hover {
+  border-color: #c6c6c0;
+
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.finder-empty {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.record-back {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.record-head {
+  border-bottom-color: #d2d0cb;
+}
+
+.dashboard-page.light-mode
+.record-kicker {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.record-id,
+.dashboard-page.light-mode
+.record-figure strong,
+.dashboard-page.light-mode
+.record-big,
+.dashboard-page.light-mode
+.record-place strong {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.record-grade,
+.dashboard-page.light-mode
+.record-cap,
+.dashboard-page.light-mode
+.record-note,
+.dashboard-page.light-mode
+.record-foot,
+.dashboard-page.light-mode
+.record-big em,
+.dashboard-page.light-mode
+.shelf-scale,
+.dashboard-page.light-mode
+.record-place span,
+.dashboard-page.light-mode
+.move-at,
+.dashboard-page.light-mode
+.move-note {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.record-label,
+.dashboard-page.light-mode
+.record-value,
+.dashboard-page.light-mode
+.move-place {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.record-verdict {
+  color: #555555;
+}
+
+.dashboard-page.light-mode
+.record-block,
+.dashboard-page.light-mode
+.record-split > div + div {
+  border-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.move-row {
+  border-top-color: #e8e6e1;
+}
+
+.dashboard-page.light-mode
+.shelf-track {
+  background: #e3e1dc;
+}
+
+.dashboard-page.light-mode
+.shelf-soon {
+  background: #9a9a94;
+}
+
+.dashboard-page.light-mode
+.move-pip {
+  background: #c9c7c2;
+}
+
+/* Pip is a filled square, tone-expired is text — different props */
+.dashboard-page.light-mode
+.move-now {
+  background: #b03a30;
+}
+
+.dashboard-page.light-mode
+.tone-expired {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.tone-urgent {
+  color: #c2521f;
+}
+
+.dashboard-page.light-mode
+.register-head {
+  border-bottom-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.register-label {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.lot-register h2 {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.register-sub,
+.dashboard-page.light-mode
+.register-stats dt,
+.dashboard-page.light-mode
+.register-hint,
+.dashboard-page.light-mode
+.register-header {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.register-stats dd {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.register-risk {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.register-title {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.register-header,
+.dashboard-page.light-mode
+.register-row:not(.register-header) {
+  border-bottom-color: #e8e6e1;
+}
+
+.dashboard-page.light-mode
+.register-row:not(.register-header) {
+  color: #555555;
+}
+
+.dashboard-page.light-mode
+.register-row.lot-expired {
+  --wash: rgba(200, 66, 54, 0.2);
+}
+
+.dashboard-page.light-mode
+.register-row.lot-urgent {
+  --wash: rgba(214, 96, 38, 0.19);
+}
+
+.dashboard-page.light-mode
+.register-row.lot-soon {
+  --wash: rgba(0, 0, 0, 0.055);
+}
+
+.dashboard-page.light-mode
+.register-row:not(.register-header):hover {
+  background:
+    linear-gradient(
+      90deg,
+      var(--wash, transparent) 0%,
+      var(--wash, transparent) 58%,
+      transparent 100%
+    ),
+    #eceef0;
+}
+
+.dashboard-page.light-mode
+.register-row.lot-open {
+  --wash: rgba(146, 113, 39, 0.3);
+}
+
+.dashboard-page.light-mode
+.lot-qty i {
+  background:
+    linear-gradient(
+      90deg,
+      var(--bar, #9aa0a4) var(--w, 0%),
+      #e3e1dc var(--w, 0%)
+    );
+}
+
+.dashboard-page.light-mode
+.lot-expired .lot-qty i {
+  --bar: #b03a30;
+}
+
+.dashboard-page.light-mode
+.lot-urgent .lot-qty i {
+  --bar: #c2521f;
+}
+
+.dashboard-page.light-mode
+.record-grid > div,
+.dashboard-page.light-mode
+.horizon-stats > div {
+  background:
+    linear-gradient(
+      160deg,
+      #f7f7f5,
+      #fbfbfa
+    );
+}
+
+.dashboard-page.light-mode
+.record-label {
+  border-left-color: #927127;
+}
+
+.dashboard-page.light-mode
+.horizon-lede {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.horizon-head-slider {
+  border-top-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.register-row:not(.register-header)::before {
+  background: #d2d0cb;
+}
+
+.dashboard-page.light-mode
+.lot-expired::before {
+  background: #8f2b24;
+}
+
+.dashboard-page.light-mode
+.lot-urgent::before {
+  background: #c2521f;
+}
+
+.dashboard-page.light-mode
+.lot-soon::before {
+  background: #9a9a94;
+}
+
+.dashboard-page.light-mode
+.lot-id {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.lot-qty b {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.lot-when b {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.lot-loc,
+.dashboard-page.light-mode
+.lot-check,
+.dashboard-page.light-mode
+.lot-when em,
+.dashboard-page.light-mode
+.lot-qty b em {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.lot-expired .lot-when em,
+.dashboard-page.light-mode
+.check-flag {
+  color: #b03a30;
+}
+
+.dashboard-page.light-mode
+.lot-urgent .lot-when em {
+  color: #c2521f;
+}
+
+.dashboard-page.light-mode
+.quality-tag {
+  border-color: #dcdad5;
+
+  background: #ffffff;
+
+  color: #414141;
+}
+
+.dashboard-page.light-mode
+.q-accept,
+.dashboard-page.light-mode
+.q-matched {
+  --dot: #1a6b43;
+}
+
+.dashboard-page.light-mode
+.q-trial {
+  --dot: #6f4bab;
+}
+
+.dashboard-page.light-mode
+.q-review {
+  --dot: #96701a;
+}
+
+.dashboard-page.light-mode
+.q-reject,
+.dashboard-page.light-mode
+.q-flag {
+  --dot: #b03a30;
+}
+
+.dashboard-page.light-mode
+.period-button {
+  background: #ffffff;
+
+  border-color: #dddddd;
+
+  color: #555555;
+}
+
+.dashboard-page.light-mode
+.placeholder-section h2 {
+  color: #202020;
+}
+
+.dashboard-page.light-mode
+.placeholder-body p {
+  color: #888888;
+}
+
+
+/* =========================================================
+   THEME TRANSITIONS
+
+   Every theme-dependent surface, border and text colour is
+   listed here exactly once, so nothing snaps while
+   .dashboard-page fades. Theme-paced props run at 0.35s to
+   match it; hover feedback stays fast at 0.18s.
+========================================================= */
+
+.dashboard-heading h1,
+.subtitle,
+.eyebrow,
+.metric-card p,
+.metric-card strong,
+.metric-card span,
+.panel-label,
+.panel h2,
+.table-row > span:nth-child(2),
+.table-row > span:last-child,
+.operation-row strong,
+.operation-row span,
+.placeholder-section h2,
+.placeholder-body p,
+.placeholder-icon {
+  transition:
+    color 0.35s ease;
+}
+
+.metric-card,
+.panel,
+.placeholder-section {
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.placeholder-body {
+  transition:
+    border-color 0.35s ease;
+}
+
+.live-status {
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.bar-track,
+.stat-grid,
+.stat-cell {
+  transition:
+    background 0.35s ease;
+}
+
+.bar-name,
+.bar-value,
+.stat-cell p,
+.stat-cell strong,
+.stat-cell span {
+  transition:
+    color 0.35s ease;
+}
+
+.table-header {
+  transition:
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.table-row,
+.operation-row {
+  transition:
+    background 0.18s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.feed-name,
+.feed-lots,
+.feed-age,
+.feed-head,
+.quantity,
+.sync-pip {
+  transition:
+    color 0.35s ease;
+}
+
+.operation-icon,
+.table-row i {
+  transition:
+    color 0.35s ease,
+    background 0.35s ease;
+}
+
+.feed-panel {
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.period-button {
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+
+/* =========================================================
+   ALERT CARDS
+
+   Colour lives on the card, not only on the number, so an
+   exception is visible without reading all four tiles.
+========================================================= */
+
+/*
+   All four carry a bar, not just the two exceptions — a rule that
+   appears on half a row reads as a mistake rather than a signal.
+   The severity is in the colour instead.
+*/
+.metric-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: 3px;
+
+  background: var(--accent, #6a7378);
+}
+
+.metric-card.metric-armed {
+  border-color: var(--accent, #6a7378);
+
+  box-shadow:
+    0 0 0 1px var(--accent, #6a7378),
+    0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+.metric-neutral {
+  --accent: #6a7378;
+}
+
+.metric-good {
+  --accent: #39b975;
+}
+
+.metric-warn {
+  --accent: #e3b33b;
+}
+
+.metric-bad {
+  --accent: #e35b55;
+}
+
+
+/* =========================================================
+   LIVE STATUS PULSE
+========================================================= */
+
+@keyframes status-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0
+      rgba(49, 179, 107, 0.5);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 7px
+      rgba(49, 179, 107, 0);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0
+      rgba(49, 179, 107, 0);
+  }
+}
+
+.status-dot {
+  animation:
+    status-pulse
+    2s
+    ease-out
+    infinite;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.placeholder-body {
+  flex: 1;
+
+  margin-top: 26px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  border:
+    1px dashed
+    #2c3033;
+
+  border-radius: 6px;
+}
+
+.placeholder-icon {
+  width: 46px;
+  height: 46px;
+
+  color: #3d4348;
+}
+
+.dashboard-page.light-mode
+.placeholder-icon {
+  color: #cbcbc4;
+}
+
+
+/* =========================================================
+   HOVER STATES
+========================================================= */
+
+.metric-card:hover {
+  transform:
+    translateY(-5px);
+
+  border-color: #4a5157;
+
+  box-shadow:
+    0
+    18px
+    38px
+    rgba(0, 0, 0, 0.42);
+}
+
+.table-header,
+.table-row,
+.operation-row {
+  margin-left: -14px;
+  margin-right: -14px;
+
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.table-row:hover,
+.operation-row:hover {
+  background:
+    rgba(255, 255, 255, 0.075);
+}
+
+/* Gold bar in the panel's padding — the unmistakable
+   "your cursor is on this row" marker. */
+.table-row::before,
+.operation-row::before {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: 3px;
+
+  background: #d0b35c;
+
+  opacity: 0;
+
+  transition:
+    opacity 0.18s ease;
+}
+
+.table-row:hover::before,
+.operation-row:hover::before {
+  opacity: 1;
+}
+
+.period-button:hover {
+  background: #1c1f21;
+
+  border-color: #4a4f53;
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   LIGHT MODE HOVER / EMPTY STATE
+========================================================= */
+
+.dashboard-page.light-mode
+.placeholder-body {
+  border-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.metric-card:hover {
+  border-color: #b9b9b1;
+
+  box-shadow:
+    0
+    18px
+    38px
+    rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-page.light-mode
+.table-row:hover,
+.dashboard-page.light-mode
+.operation-row:hover {
+  background: #edeff1;
+}
+
+.dashboard-page.light-mode
+.table-row::before,
+.dashboard-page.light-mode
+.operation-row::before {
+  background: #a90020;
+}
+
+.dashboard-page.light-mode
+.period-button:hover {
+  background: #f5f5f3;
+
+  border-color: #c6c6c0;
+
+  color: #222222;
+}
+
+
+/* =========================================================
+   FOCUS STATES
+
+   Keyboard-only. Several controls set outline: none, so
+   these restore a visible ring without affecting a click.
+========================================================= */
+
+.nav-item:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: 3px;
+}
+
+.theme-toggle:focus-visible,
+.signout-button:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: -3px;
+}
+
+.period-button:focus-visible {
+  outline:
+    2px solid
+    #e2b83b;
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .login-shell-open .login-card,
+  .heading-main,
+  .heading-rule,
+  .lot-register,
+  .bell,
+  .cross-line,
+  .cross-halo,
+  .cross-dot,
+  .bell-mt,
+  .ring-arc,
+  .record-block,
+  .record-head,
+  .move-row,
+  .shelf-fill,
+  .bar-fill {
+    animation: none;
+  }
+
+  .login-card {
+    opacity: 1;
+  }
+
+  /* FLIP transitions are set inline, so they need overriding */
+  .abg-logo,
+  .dashboard-nav,
+  .header-right {
+    transition: none !important;
+  }
+
+  .orb-bite,
+  .orb-rays {
+    transition: none;
+  }
+
+  .sync-pip {
+    animation: none;
+  }
+
+  .nav-indicator-ready {
+    transition:
+      opacity 0.2s ease;
+  }
+
+  .status-dot {
+    animation: none;
+  }
+
+  .metric-card:hover {
+    transform: none;
+  }
+
+  .login-shell {
+    transition: none;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1500px) {
+
+  .header-inner {
+    padding: 0 30px;
+  }
+
+  .abg-logo {
+    width: 160px;
+  }
+
+  .abg-logo img {
+    width: 140px;
+    height: 88px;
+  }
+
+  .dashboard-nav {
+    gap: 24px;
+  }
+
+  .nav-item {
+    font-size: 14px;
+  }
+
+  .header-right {
+    width: 245px;
+  }
+}
+
+@media (max-width: 1250px) {
+
+  .dashboard-header {
+    height: 96px;
+  }
+
+  .header-inner {
+    padding: 0 22px;
+  }
+
+  .abg-logo {
+    width: 140px;
+    height: 96px;
+  }
+
+  .abg-logo img {
+    width: 120px;
+    height: 82px;
+  }
+
+  .dashboard-nav {
+    gap: 17px;
+  }
+
+  .nav-item {
+    font-size: 12px;
+  }
+
+  .header-right {
+    width: 120px;
+  }
+
+  .works-label {
+    display: none;
+  }
+
+  .metrics-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1000px) {
+
+  .dashboard-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 950px) {
+
+  .dashboard-header {
+    height: auto;
+    min-height: 88px;
+  }
+
+  .header-inner {
+    min-height: 88px;
+    padding: 8px 18px;
+  }
+
+  .abg-logo {
+    width: 120px;
+    height: 72px;
+  }
+
+  .abg-logo img {
+    width: 105px;
+    height: 68px;
+  }
+
+  .dashboard-nav {
+    gap: 12px;
+
+    overflow-x: auto;
+
+    justify-content: flex-start;
+
+    scrollbar-width: none;
+  }
+
+  .dashboard-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    font-size: 11px;
+  }
+
+  .header-right {
+    width: 82px;
+    gap: 7px;
+  }
+
+  .works-label {
+    display: none;
+  }
+
+  .dashboard-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dashboard-header.header-scrolled
+  .dashboard-nav {
+    max-width: 65vw;
+    gap: 20px;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  .dashboard-header.header-scrolled
+  .dashboard-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dashboard-header.header-scrolled
+  .abg-logo {
+    left: 12px;
+  }
+
+  .dashboard-header.header-scrolled
+  .header-right {
+    top: 10px;
+    right: 12px;
+  }
+}
+
+@media (max-width: 900px) {
+
+  /* No room for a fade — the scrim covers the window instead */
+  .login-shell {
+    width: 100%;
+
+    min-width: 0;
+
+    padding: 28px;
+
+    /* Full-width scrim has no fade to sit clear of, so re-centre */
+    justify-content: center;
+
+    background:
+      rgba(9, 11, 13, 0.92);
+
+    backdrop-filter: blur(18px);
+  }
+}
+
+@media (max-width: 700px) {
+
+  .dashboard-content {
+    width: 92%;
+    padding-top: 45px;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 26px;
+  }
+
+  .record-block {
+    grid-template-columns: 1fr;
+
+    gap: 18px;
+  }
+
+  .record-split > div + div {
+    padding-left: 0;
+
+    border-left: none;
+  }
+
+  .move-row {
+    grid-template-columns: 16px 1fr;
+
+    gap: 8px;
+
+    padding: 12px 0;
+  }
+
+  .finder-field,
+  .finder-field select,
+  .finder-field input {
+    width: 100%;
+  }
+
+  .finder-divider {
+    display: none;
+  }
+
+  .panel {
+    padding: 20px;
+  }
+
+  .dashboard-header.header-scrolled
+  .abg-logo {
+    width: 96px;
+    height: 68px;
+    left: 8px;
+    padding: 6px;
+  }
+
+  .dashboard-header.header-scrolled
+  .abg-logo img {
+    width: 84px;
+    height: 56px;
+  }
+
+  .dashboard-header.header-scrolled
+  .dashboard-nav {
+    top: 12px;
+
+    max-width: 55vw;
+
+    gap: 16px;
+  }
+
+  .dashboard-header.header-scrolled
+  .nav-item {
+    font-size: 10px;
+  }
+
+  .dashboard-header.header-scrolled
+  .header-right {
+    top: 10px;
+    right: 8px;
+  }
+
+  .dashboard-header.header-scrolled
+  .header-controls {
+    height: 34px;
+  }
+
+  .dashboard-header.header-scrolled
+  .theme-toggle,
+  .dashboard-header.header-scrolled
+  .signout-button {
+    width: 34px;
+  }
+}

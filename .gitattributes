@@ -1,0 +1,11 @@
+# Normalise line endings so the scheduled push does not see the whole
+# codebase as modified every time Git rewrites CRLF on checkout.
+* text=auto eol=lf
+
+# Binary, so Git never tries to diff or convert them
+*.png binary
+*.svg text eol=lf
+*.mp4 binary
+*.ico binary
+*.woff  binary
+*.woff2 binary
