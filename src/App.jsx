@@ -220,17 +220,66 @@ function buildMovements(lot) {
     .reverse();
 }
 
+/*
+   Each reading carries its own spec window. A bare "390 ppm" tells
+   an operator nothing; 390 sitting inside 240-450 is legible at a
+   glance, which is the whole point of showing it against the band.
+*/
+const QUALITY_SPEC = [
+  { key: "SSA", unit: "m²/g", lo: 0.7, hi: 1.9, dp: 2 },
+  { key: "XRF Na₂O", unit: "ppm", lo: 240, hi: 450, dp: 0 },
+  { key: "PSD D50", unit: "µm", lo: 55, hi: 85, dp: 1 },
+  { key: "LOI", unit: "%", lo: 0.4, hi: 1.4, dp: 1 },
+];
+
+/*
+   The bar shows a fifth past each limit, so a failing reading has
+   somewhere to sit outside the band instead of pinning to the end
+   and looking merely borderline.
+*/
+const SPEC_PAD = 0.2;
+
 function buildQuality(lot) {
   const h = lotHash(lot.id);
 
   // One reading is out of spec on a rejected lot — that is why it failed.
-  const failing = lot.quality === "Reject" ? h % 3 : -1;
+  const failing =
+    lot.quality === "Reject" ? h % QUALITY_SPEC.length : -1;
 
-  return [
-    { key: "SSA", unit: "m²/g", value: spread(h, 0, 0.8, 1.7).toFixed(2) },
-    { key: "XRF Na₂O", unit: "ppm", value: Math.round(spread(h, 1, 250, 420)) },
-    { key: "PSD D50", unit: "µm", value: spread(h, 2, 58, 79).toFixed(1) },
-  ].map((row, i) => ({ ...row, ok: i !== failing }));
+  return QUALITY_SPEC.map((spec, i) => {
+    const span = spec.hi - spec.lo;
+    const roll = spread(h, i, 0, 1);
+
+    /*
+       A passing reading lands inside the middle 80% of the window
+       rather than anywhere in it, so nothing sits so close to a
+       limit that the tick looks like a failure.
+    */
+    let raw = spec.lo + span * (0.1 + roll * 0.8);
+
+    if (i === failing) {
+      // Drifting high or low, whichever this lot's hash picks
+      raw =
+        (h >>> (i * 3)) % 2 === 0
+          ? spec.hi + span * (0.04 + roll * 0.09)
+          : spec.lo - span * (0.04 + roll * 0.09);
+    }
+
+    const value = Number(raw.toFixed(spec.dp));
+
+    const lo = spec.lo - span * SPEC_PAD;
+    const hi = spec.hi + span * SPEC_PAD;
+
+    return {
+      ...spec,
+      value,
+      ok: value >= spec.lo && value <= spec.hi,
+      tick: Math.max(
+        0,
+        Math.min(100, ((value - lo) / (hi - lo)) * 100),
+      ),
+    };
+  });
 }
 
 /*
@@ -2189,25 +2238,46 @@ function LotRecord({ lot, onBack }) {
         </div>
       </RecordBlock>
 
-      <RecordBlock index={4} label="QUALITY" note="From LIMS">
-        <div className="record-grid record-split">
+      <RecordBlock
+        index={4}
+        label="QUALITY"
+        note="LIMS results against spec"
+      >
+        <div className="spec-grid">
           {quality.map((row) => (
-            <div key={row.key}>
-              <p className="record-cap">{row.key}</p>
+            <div className="spec-row" key={row.key}>
+              <div className="spec-head">
+                <span className="spec-name">{row.key}</span>
 
-              <p className="record-big">
-                {row.value} <em>{row.unit}</em>
-              </p>
+                <span className="spec-value">
+                  {row.value}
+                  <em>{row.unit}</em>
+                </span>
+              </div>
 
-              <p
-                className={`record-foot ${
-                  row.ok ? "" : "tone-expired"
-                }`}
-              >
-                {row.ok
-                  ? "Within grade specification"
-                  : "Outside grade specification"}
-              </p>
+              <div className="spec-bar">
+                {/* The in-spec window, inset inside the wider range */}
+                <i className="spec-band" />
+
+                <i
+                  className={`spec-tick ${
+                    row.ok ? "" : "tick-out"
+                  }`}
+                  style={{ left: `${row.tick}%` }}
+                />
+              </div>
+
+              <div className="spec-foot">
+                <span>{row.lo}</span>
+
+                <span
+                  className={row.ok ? "" : "tone-expired"}
+                >
+                  {row.ok ? "in spec" : "out of spec"}
+                </span>
+
+                <span>{row.hi}</span>
+              </div>
             </div>
           ))}
         </div>

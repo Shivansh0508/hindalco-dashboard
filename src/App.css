@@ -2141,6 +2141,135 @@ button {
 
 
 /* =========================================================
+   QUALITY AGAINST SPEC
+
+   Each reading is shown on its own window rather than as a bare
+   figure. The bar runs a fifth past each limit, so an out-of-spec
+   result sits visibly outside the band instead of pinning to the
+   end and reading as merely borderline.
+========================================================= */
+
+.spec-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(272px, 1fr));
+
+  gap: 24px 36px;
+}
+
+.spec-head {
+  display: flex;
+
+  align-items: baseline;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 9px;
+}
+
+.spec-name {
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #9aa1a6;
+}
+
+.spec-value {
+  font-size: 19px;
+  font-weight: 700;
+
+  color: #ffffff;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.spec-value em {
+  margin-left: 5px;
+
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.spec-bar {
+  position: relative;
+
+  height: 26px;
+
+  border-radius: 4px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  overflow: hidden;
+}
+
+/*
+   14.286% = the 20% pad over a 140% display range. If SPEC_PAD
+   changes in the JSX, this has to move with it.
+*/
+.spec-band {
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 14.286%;
+  right: 14.286%;
+
+  background:
+    rgba(255, 255, 255, 0.085);
+}
+
+.spec-tick {
+  position: absolute;
+
+  top: 3px;
+  bottom: 3px;
+
+  width: 3px;
+
+  margin-left: -1.5px;
+
+  border-radius: 2px;
+
+  background: #ffffff;
+
+  transition:
+    left 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tick-out {
+  background: #e34948;
+
+  box-shadow:
+    0 0 10px rgba(227, 73, 72, 0.55);
+}
+
+.spec-foot {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 7px;
+
+  font-size: 11px;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
    SHELF LIFE BAR
 ========================================================= */
 
@@ -6014,6 +6143,46 @@ button {
 /* =========================================================
    LIGHT MODE
 ========================================================= */
+
+.dashboard-page.light-mode
+.spec-name {
+  color: #6f7276;
+}
+
+.dashboard-page.light-mode
+.spec-value {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.spec-value em,
+.dashboard-page.light-mode
+.spec-foot {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.spec-bar {
+  background: #f2f1ee;
+}
+
+.dashboard-page.light-mode
+.spec-band {
+  background: #e4e2dd;
+}
+
+.dashboard-page.light-mode
+.spec-tick {
+  background: #1d1d1d;
+}
+
+.dashboard-page.light-mode
+.tick-out {
+  background: #c0332f;
+
+  box-shadow:
+    0 0 10px rgba(192, 51, 47, 0.4);
+}
 
 .dashboard-page.light-mode {
   background: #f5f5f3;
