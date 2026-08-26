@@ -812,6 +812,180 @@ function trackPointer(event) {
   );
 }
 
+/*
+   Quoted only where it has to be, so the file stays readable if
+   someone opens it in a text editor rather than Excel.
+*/
+function csvCell(value) {
+  const text = String(value);
+
+  const risky =
+    text.includes(",") ||
+    text.includes('"') ||
+    text.includes("\r") ||
+    text.includes("\n");
+
+  return risky
+    ? `"${text.replace(/"/g, '""')}"`
+    : text;
+}
+
+/*
+   ISO rather than the page's "22 Aug 25". A spreadsheet sorts this
+   correctly, and it cannot be misread as month-first by whoever
+   opens the file.
+*/
+function stamp(date, withTime) {
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const day = `${date.getFullYear()}-${
+    pad(date.getMonth() + 1)
+  }-${pad(date.getDate())}`;
+
+  return withTime
+    ? `${day} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+    : day;
+}
+
+function downloadCsv(lines, filename) {
+  const csv = lines
+    .map((line) => line.map(csvCell).join(","))
+    .join("\r\n");
+
+  /*
+     The BOM is what makes Excel read this as UTF-8 instead of the
+     machine's local codepage. Without it the ≤ in an issue name
+     arrives as mojibake on a lot of Windows installs.
+  */
+  const blob = new Blob([`\uFEFF${csv}`], {
+    type: "text/csv;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
+}
+
+/*
+   A single lot cannot be one flat row: the readings and the
+   movement trail are both lists, and a history of varying length
+   would either repeat the record on every line or need its own
+   file. Three labelled blocks instead, which a spreadsheet reads
+   fine and a person can actually follow.
+*/
+function exportLotRecord(lot) {
+  const stock = reconcile(lot);
+  const moves = buildMovements(lot);
+
+  const lines = [
+    ["Lot record"],
+    ["Field", "Value"],
+    ["Lot", lot.id],
+    ["Grade", lot.grade],
+    ["Grade name", gradeBook[lot.grade].name],
+    ["Quantity MT", lot.qty.toFixed(2)],
+    [
+      "Manual register MT",
+      // Blank, not 0.00 - the register has never seen it
+      stock.manual === 0 ? "" : stock.manual.toFixed(2),
+    ],
+    ["PL2P production MT", stock.pl2p.toFixed(2)],
+    ["Difference MT", stock.diff.toFixed(2)],
+    [
+      "Reconciliation",
+      lot.check === "Matched"
+        ? "Matched"
+        : lot.check === "PL2P only"
+          ? "Not in manual register"
+          : "Quantity difference",
+    ],
+    ["Quality", lot.quality],
+    ["Produced", stamp(lot.produced, true)],
+    ["Expires", stamp(lot.expires, false)],
+    ["Shelf life days", gradeBook[lot.grade].shelfDays],
+    ["Days left", lot.daysLeft],
+    ["Age status", ageLabel(lot.daysLeft)],
+    ["Location", lot.location],
+    ["Entered by", operators[lotHash(lot.id) % operators.length]],
+
+    [],
+    ["Quality readings"],
+    ["Reading", "Value", "Unit", "In spec"],
+    ...buildQuality(lot).map((r) => [
+      r.key,
+      r.value,
+      r.unit,
+      r.ok ? "Yes" : "No",
+    ]),
+
+    [],
+    ["Movement trail"],
+    ["Date", "Location", "Note"],
+    // buildMovements returns newest first, so index 0 is where it is now
+    ...moves.map((m, i) => [
+      stamp(m.at, true),
+      m.place,
+      i === 0 ? "Current location" : "",
+    ]),
+  ];
+
+  downloadCsv(lines, `fg-lot-${lot.id}.csv`);
+}
+
+function exportCsv(rows) {
+  const lines = [
+    [
+      "Lot",
+      "Grade",
+      "Manual MT",
+      "PL2P MT",
+      "Difference MT",
+      "Issue",
+    ],
+    ...rows.map((r) => [
+      r.id,
+      r.grade,
+      r.manual === 0 ? "" : r.manual.toFixed(2),
+      r.pl2p.toFixed(2),
+      r.diff.toFixed(2),
+      r.issue,
+    ]),
+  ];
+
+  downloadCsv(
+    lines,
+    `fg-exceptions-${
+      new Date().toISOString().slice(0, 10)
+    }.csv`,
+  );
+}
+
+/* Resolves false rather than throwing when the page has no
+   clipboard permission, so the caller can stay quiet about it. */
+function copyLot(id) {
+  if (!navigator.clipboard?.writeText) {
+    return Promise.resolve(false);
+  }
+
+  return navigator.clipboard.writeText(id).then(
+    () => true,
+    () => false,
+  );
+}
+
+const GRADE_SORT = {
+  code: (g) => g.code,
+  name: (g) => g.name,
+  lots: (g) => g.lots,
+  qty: (g) => g.qty,
+  atRisk: (g) => g.atRisk,
+};
+
 const EX_SORT = {
   id: (r) => r.id,
   grade: (r) => r.grade,
@@ -825,6 +999,19 @@ const EX_SORT = {
 function ExceptionTable({ rows, filterLabel, onClear, children }) {
   // Worst discrepancy first, which is how the list arrives
   const [sort, setSort] = useState({ key: "diff", dir: -1 });
+
+  const [copied, setCopied] = useState("");
+
+  // The "copied" tag is a confirmation, not a state worth keeping
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+
+    const id = setTimeout(() => setCopied(""), 1500);
+
+    return () => clearTimeout(id);
+  }, [copied]);
 
   const sorted = sortRows(rows, EX_SORT, sort.key, sort.dir);
 
@@ -850,6 +1037,16 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
     (m, r) => Math.max(m, Math.abs(r.diff)),
     0,
   ) || 1;
+
+  /*
+     Both feeds share one scale. Scaling each row to its own pair
+     would make every gap look the same size, which is the opposite
+     of the point.
+  */
+  const biggest = rows.reduce(
+    (m, r) => Math.max(m, r.manual, r.pl2p),
+    0,
+  ) || 1;
   return (
     <section className="exception-panel">
       <div className="panel-header">
@@ -858,16 +1055,42 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
           <h2>Exceptions</h2>
         </div>
 
-        {filterLabel ? (
-          <button
-            type="button"
-            className="filter-chip"
-            onClick={onClear}
-          >
-            {filterLabel}
-            <i>clear</i>
-          </button>
-        ) : null}
+        <div className="panel-actions">
+          {filterLabel ? (
+            <button
+              type="button"
+              className="filter-chip"
+              onClick={onClear}
+            >
+              {filterLabel}
+              <i>clear</i>
+            </button>
+          ) : null}
+
+          {rows.length > 0 ? (
+            <button
+              type="button"
+              className="export-btn"
+              onClick={() => exportCsv(sorted)}
+              title="Download these rows as a CSV"
+            >
+              <svg
+                viewBox="0 0 14 14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M7 1v8" />
+                <path d="M4 6.5 7 9.5l3-3" />
+                <path d="M1.5 10.5v2h11v-2" />
+              </svg>
+              Export CSV
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {children}
@@ -883,8 +1106,7 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
               {[
                 ["LOT", "id"],
                 ["GRADE", "grade"],
-                ["MANUAL", "manual"],
-                ["PL2P", "pl2p"],
+                ["MANUAL vs PL2P", "pl2p"],
                 ["DIFFERENCE", "diff"],
                 ["ISSUE", "issue"],
               ].map(([label, field]) => (
@@ -915,24 +1137,71 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
                 }}
                 onPointerMove={trackPointer}
               >
-                <span className="ex-id">{r.id}</span>
+                <button
+                  type="button"
+                  className={`ex-id ${
+                    copied === r.id ? "ex-copied" : ""
+                  }`}
+                  onClick={() =>
+                    copyLot(r.id).then(
+                      (ok) => ok && setCopied(r.id),
+                    )
+                  }
+                  title="Copy this lot number"
+                >
+                  {r.id}
+
+                  <i aria-hidden="true">
+                    {copied === r.id ? "copied" : "copy"}
+                  </i>
+                </button>
 
                 <span className="ex-grade">{r.grade}</span>
 
-                <span className="ex-fig">
-                  {r.manual === 0 ? (
-                    <s>absent</s>
-                  ) : (
-                    <>
-                      {r.manual.toFixed(2)}
-                      <em>MT</em>
-                    </>
-                  )}
-                </span>
+                {/*
+                   Two bars on one scale: the gap between them is
+                   the discrepancy, seen rather than worked out.
+                */}
+                <span className="ex-pair">
+                  <span className="pair-line">
+                    <b>M</b>
 
-                <span className="ex-fig">
-                  {r.pl2p.toFixed(2)}
-                  <em>MT</em>
+                    <span className="pair-track">
+                      <i
+                        style={{
+                          "--w": `${
+                            (r.manual / biggest) * 100
+                          }%`,
+                        }}
+                      />
+                    </span>
+
+                    <span className="pair-num">
+                      {r.manual === 0 ? (
+                        <s>absent</s>
+                      ) : (
+                        r.manual.toFixed(2)
+                      )}
+                    </span>
+                  </span>
+
+                  <span className="pair-line pair-sys">
+                    <b>P</b>
+
+                    <span className="pair-track">
+                      <i
+                        style={{
+                          "--w": `${
+                            (r.pl2p / biggest) * 100
+                          }%`,
+                        }}
+                      />
+                    </span>
+
+                    <span className="pair-num">
+                      {r.pl2p.toFixed(2)}
+                    </span>
+                  </span>
                 </span>
 
                 <span
@@ -1724,13 +1993,37 @@ function LotRecord({ lot, onBack }) {
 
   return (
     <div className="lot-record" key={lot.id}>
-      <button
-        type="button"
-        className="record-back"
-        onClick={onBack}
-      >
-        ← All {lot.grade} lots
-      </button>
+      <div className="record-bar">
+        <button
+          type="button"
+          className="record-back"
+          onClick={onBack}
+        >
+          ← All {lot.grade} lots
+        </button>
+
+        <button
+          type="button"
+          className="export-btn"
+          onClick={() => exportLotRecord(lot)}
+          title="Download this lot's record, readings and movement trail"
+        >
+          <svg
+            viewBox="0 0 14 14"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M7 1v8" />
+            <path d="M4 6.5 7 9.5l3-3" />
+            <path d="M1.5 10.5v2h11v-2" />
+          </svg>
+          Export record
+        </button>
+      </div>
 
       <header className="record-head" style={{ "--i": 0 }}>
         <div>
@@ -2131,6 +2424,12 @@ function Dashboard({ onSignOut, operator }) {
   const [lotId, setLotId] = useState(entry?.lot ?? "");
   const [query, setQuery] = useState("");
 
+  // Heaviest grade first, which is the order the table arrives in
+  const [gradeSort, setGradeSort] = useState({
+    key: "qty",
+    dir: -1,
+  });
+
   /*
      Browser Back used to leave the site outright: moving between
      tabs, grades and lots is all component state, and state alone
@@ -2375,6 +2674,28 @@ function Dashboard({ onSignOut, operator }) {
   // Bars are scaled to the largest grade, so the table fills its width
   const heaviestGrade =
     gradeSummary.reduce((m, g) => Math.max(m, g.qty), 0) || 1;
+
+  const sortedGrades = sortRows(
+    gradeSummary,
+    GRADE_SORT,
+    gradeSort.key,
+    gradeSort.dir,
+  );
+
+  const gradeFlip = useRowFlip(
+    `${gradeSort.key}${gradeSort.dir}`,
+  );
+
+  const onGradeSort = (key) => {
+    gradeFlip.capture();
+
+    setGradeSort((was) =>
+      was.key === key
+        ? { key, dir: -was.dir }
+        : /* Text reads best A-Z, figures biggest-first */
+          { key, dir: key === "code" || key === "name" ? 1 : -1 },
+    );
+  };
 
   const kpiLabel = activeKpi
     ? overviewMetrics.find((m) => m.key === activeKpi).label
@@ -3005,18 +3326,32 @@ function Dashboard({ onSignOut, operator }) {
 
             <div className="grade-grid">
               <div className="grade-row grade-head">
-                <span>GRADE</span>
-                <span>DESCRIPTION</span>
-                <span>LOTS</span>
-                <span>TOTAL STOCK</span>
-                <span>AT RISK ≤ 7D</span>
+                {[
+                  ["GRADE", "code", false],
+                  ["DESCRIPTION", "name", false],
+                  ["LOTS", "lots", true],
+                  ["TOTAL STOCK", "qty", true],
+                  ["AT RISK ≤ 7D", "atRisk", true],
+                ].map(([label, field, right]) => (
+                  <SortHead
+                    key={field}
+                    label={label}
+                    field={field}
+                    sort={gradeSort}
+                    onSort={onGradeSort}
+                    right={right}
+                  />
+                ))}
               </div>
 
-              {gradeSummary.map((g, i) => (
+              {sortedGrades.map((g, i) => (
                 <button
                   type="button"
                   key={g.code}
                   className="grade-row"
+                  ref={(node) => {
+                    gradeFlip.nodes.current.set(g.code, node);
+                  }}
                   style={{
                     "--fill": `${
                       (g.qty / heaviestGrade) * 100

@@ -1869,6 +1869,25 @@ button {
   }
 }
 
+/* The back link and the export sit on one line together */
+.record-bar {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 6px;
+}
+
+.record-bar .export-btn {
+  height: 30px;
+
+  flex-shrink: 0;
+}
+
 .record-back {
   margin-bottom: 26px;
 
@@ -5006,7 +5025,8 @@ button {
 }
 
 .grade-head {
-  padding-bottom: 12px;
+  /* Matches the data rows' left padding; these were 16px apart */
+  padding: 0 10px 12px 16px;
 
   border-bottom:
     1px solid
@@ -5020,9 +5040,6 @@ button {
   color: #858b8f;
 }
 
-.grade-head span:nth-child(3),
-.grade-head span:nth-child(4),
-.grade-head span:nth-child(5),
 .grade-fig {
   text-align: right;
 }
@@ -5304,13 +5321,13 @@ button {
 .exception-row {
   display: grid;
 
+  /* MANUAL and PL2P share one column now, as a paired bar */
   grid-template-columns:
-    minmax(160px, 1.4fr)
-    90px
+    minmax(170px, 1.2fr)
+    80px
+    232px
     120px
-    120px
-    130px
-    minmax(150px, 1fr);
+    minmax(140px, 1fr);
 
   align-items: center;
 
@@ -5412,12 +5429,29 @@ button {
 }
 
 .ex-id {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0;
+
+  border: none;
+
+  background: none;
+
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
 
   color: #ffffff;
 
   letter-spacing: 0.4px;
+
+  text-align: left;
+
+  cursor: pointer;
 }
 
 .ex-grade {
@@ -5645,6 +5679,335 @@ button {
   color: #858b8f;
 
   font-size: 11px;
+}
+
+
+/* =========================================================
+   SORTABLE HEADS, PAIRED BARS, ROW ACTIONS
+========================================================= */
+
+.sort-head {
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  width: 100%;
+
+  padding: 0;
+
+  border: none;
+
+  background: none;
+
+  color: inherit;
+
+  font: inherit;
+
+  letter-spacing: inherit;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition: color 0.18s ease;
+}
+
+/* Figures are right-aligned, so their heads have to be too. This
+   replaces an nth-child rule that stopped matching once the heads
+   became buttons rather than spans. */
+.sort-right {
+  justify-content: flex-end;
+}
+
+.sort-head:hover {
+  color: #d8d8d8;
+}
+
+.sort-on {
+  color: #e2b83b;
+}
+
+/* Faint on hover so the column reads as sortable before you
+   commit; solid once it is the one doing the sorting. */
+.sort-caret {
+  display: inline-flex;
+
+  width: 9px;
+
+  opacity: 0;
+
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s ease;
+}
+
+.sort-head:hover .sort-caret {
+  opacity: 0.45;
+}
+
+.sort-on .sort-caret {
+  opacity: 1;
+}
+
+.caret-up {
+  transform: rotate(180deg);
+}
+
+.sort-caret svg {
+  width: 100%;
+  height: auto;
+
+  display: block;
+}
+
+/* ---- manual against PL2P ---- */
+
+.ex-pair {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.pair-line {
+  display: grid;
+
+  grid-template-columns:
+    11px
+    1fr
+    54px;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+.pair-line b {
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+
+  color: #7c8286;
+}
+
+.pair-track {
+  height: 5px;
+
+  border-radius: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+}
+
+.pair-track i {
+  display: block;
+
+  width: var(--w, 0%);
+  height: 100%;
+
+  border-radius: 3px;
+
+  background: #767f86;
+
+  transition:
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* PL2P in its own hue, so the two bars are never read as one */
+.pair-sys .pair-track i {
+  background: #4c8fbf;
+}
+
+.pair-num {
+  font-size: 11px;
+
+  font-variant-numeric: tabular-nums;
+
+  text-align: right;
+
+  color: #cfcfcf;
+}
+
+.pair-num s {
+  font-size: 10px;
+
+  color: #7c8286;
+}
+
+/* ---- copy and export ---- */
+
+.panel-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+/* Held back until the row is hovered: a copy tag on every row
+   would be louder than the data it sits beside. */
+.ex-id i {
+  padding: 2px 6px;
+
+  border-radius: 4px;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.6px;
+
+  color: #9aa1a6;
+
+  opacity: 0;
+
+  transition: opacity 0.18s ease;
+}
+
+.exception-row:hover .ex-id i,
+.ex-id:focus-visible i {
+  opacity: 1;
+}
+
+.ex-copied i {
+  opacity: 1;
+
+  background:
+    rgba(47, 211, 155, 0.16);
+
+  color: #55d9a6;
+}
+
+/*
+   Filled rather than outlined. As an outline its 1px #3a3f43 edge
+   sat at 1.64:1 against the panel — the label read fine but the
+   button had no perceptible boundary, so it read as loose text.
+*/
+.export-btn {
+  position: relative;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  height: 34px;
+
+  padding: 0 16px;
+
+  border:
+    1px solid
+    #c9a338;
+
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #ecca6a 0%,
+      #d3ad42 100%
+    );
+
+  /* Near-black ink on the gold: 8:1 at the darkest stop */
+  color: #241a06;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+
+  letter-spacing: 0.8px;
+
+  cursor: pointer;
+
+  /* Top highlight for the raised edge, glow to lift it off */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 4px 14px rgba(226, 184, 59, 0.26);
+
+  overflow: hidden;
+
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.export-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.export-btn:hover {
+  transform: translateY(-1px);
+
+  filter: brightness(1.06);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 8px 22px rgba(226, 184, 59, 0.38);
+}
+
+.export-btn:active {
+  transform: translateY(0);
+
+  filter: brightness(0.97);
+}
+
+/*
+   A sheen that crosses once per hover. Once, not looping: a button
+   that shimmers forever stops reading as a button and starts
+   reading as an advert.
+*/
+.export-btn::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: -60%;
+
+  width: 45%;
+
+  background:
+    linear-gradient(
+      100deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+
+  transform: skewX(-18deg);
+
+  opacity: 0;
+
+  pointer-events: none;
+}
+
+.export-btn:hover::after {
+  animation: btn-sheen 0.75s ease forwards;
+}
+
+@keyframes btn-sheen {
+  from {
+    left: -60%;
+    opacity: 1;
+  }
+
+  to {
+    left: 120%;
+    opacity: 1;
+  }
 }
 
 
@@ -6172,6 +6535,86 @@ button {
 .dashboard-page.light-mode
 .ex-id {
   color: #171717;
+}
+
+.dashboard-page.light-mode
+.sort-head:hover {
+  color: #3a3a3a;
+}
+
+/* The dark-mode gold washes out on white; this is the same step
+   the other light accents use. */
+.dashboard-page.light-mode
+.sort-on {
+  color: #927127;
+}
+
+.dashboard-page.light-mode
+.pair-track {
+  background: #e7e5e0;
+}
+
+.dashboard-page.light-mode
+.pair-track i {
+  background: #9aa1a6;
+}
+
+.dashboard-page.light-mode
+.pair-sys .pair-track i {
+  background: #3d7ea8;
+}
+
+.dashboard-page.light-mode
+.pair-num {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.pair-line b,
+.dashboard-page.light-mode
+.pair-num s {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.ex-id i {
+  background: #eceae5;
+
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.ex-copied i {
+  background:
+    rgba(21, 137, 92, 0.14);
+
+  color: #15895c;
+}
+
+/* A deeper gold on white, where the light stop would glare */
+.dashboard-page.light-mode
+.export-btn {
+  border-color: #a9862a;
+
+  background:
+    linear-gradient(
+      180deg,
+      #dcb44b 0%,
+      #c39a30 100%
+    );
+
+  color: #1f1704;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 4px 12px rgba(146, 113, 39, 0.22);
+}
+
+.dashboard-page.light-mode
+.export-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 8px 20px rgba(146, 113, 39, 0.30);
 }
 
 .dashboard-page.light-mode
@@ -7142,6 +7585,7 @@ button {
   .shelf-fill,
   .grade-row,
   .exception-row,
+  .export-btn::after,
   .bar-fill {
     animation: none;
   }
