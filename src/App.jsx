@@ -340,12 +340,17 @@ const overviewMetrics = [
    cleared state rather than a filter, so clicking the lead tile
    resets rather than narrowing to everything.
 */
+/*
+   What each KPI means when it is armed. One definition, used by
+   both the exception list and the lot register, so a card cannot
+   mean two different things depending on which table you read.
+*/
 const kpiTests = {
   all: () => true,
   matched: (l) => l.check === "Matched",
   mismatch: (l) => l.check !== "Matched" && l.check !== "PL2P only",
-  attention: (l) =>
-    l.daysLeft <= 30 || l.quality === "Reject" || l.check === "PL2P only",
+  // Already past shelf life, or inside the last week of it
+  attention: (l) => l.daysLeft <= 7,
 };
 
 /*
@@ -1212,13 +1217,44 @@ function GradeTable({ rows, onOpen }) {
 }
 
 /*
+   Brings the register into view when a KPI or a reconciliation ring
+   arms it. The offset clears the collapsed header, which is fixed
+   once the page has scrolled and would otherwise sit over the
+   panel's own heading.
+*/
+function revealRegister(node) {
+  if (!node) {
+    return;
+  }
+
+  const box = node.getBoundingClientRect();
+
+  window.scrollTo({
+    top: Math.max(0, window.scrollY + box.top - 92),
+    behavior: window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches
+      ? "auto"
+      : "smooth",
+  });
+}
+
+/*
    A panel head with an armed-filter chip, shared by the three
    overview tables so each says what is narrowing it the same way.
    A wrapper only: it adds no styling of its own.
 */
-function OverviewPanel({ label, title, side, filter, onClear, children }) {
+function OverviewPanel({
+  label,
+  title,
+  side,
+  filter,
+  onClear,
+  panelRef,
+  children,
+}) {
   return (
-    <section className="exception-panel">
+    <section className="exception-panel" ref={panelRef}>
       <div className="panel-header">
         <div>
           <p className="panel-label">{label}</p>
@@ -1246,165 +1282,116 @@ function OverviewPanel({ label, title, side, filter, onClear, children }) {
   );
 }
 
-/* Module A — how much stock is running out, and when */
-function AgeingTable({ lots, filter, onPick }) {
-  const total = lots.reduce((s, l) => s + l.qty, 0) || 1;
-
-  return (
-    <OverviewPanel
-      label="AGE ANALYSIS"
-      title="Ageing bands"
-      side={`${lots.length} lots`}
-    >
-      <div className="ov-table ov-age">
-        <div className="ov-row ov-head">
-          <span>WINDOW</span>
-          <span>WHAT IT MEANS</span>
-          <span className="head-right">LOTS</span>
-          <span className="head-right">QUANTITY</span>
-          <span className="head-right">SHARE</span>
-        </div>
-
-        {AGE_BANDS.map((band) => {
-          const hit = lots.filter(band.test);
-          const qty = hit.reduce((s, l) => s + l.qty, 0);
-          const armed =
-            filter?.kind === "age" && filter.value === band.key;
-
-          return (
-            <button
-              type="button"
-              key={band.key}
-              className={`ov-row ${armed ? "ov-armed" : ""}`}
-              onClick={() =>
-                onPick(
-                  armed
-                    ? null
-                    : {
-                        kind: "age",
-                        value: band.key,
-                        label: band.label,
-                      },
-                )
-              }
-            >
-              <span className="ov-key">{band.label}</span>
-              <span className="ov-note">{band.note}</span>
-              <span className="ov-fig">{hit.length}</span>
-
-              <span className="ov-fig">
-                {qty.toFixed(2)}
-                <em>MT</em>
-              </span>
-
-              <span className="ov-fig">
-                <i className={`pill ${band.tone}`}>
-                  {((qty / total) * 100).toFixed(1)}%
-                </i>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </OverviewPanel>
-  );
-}
-
-/* Modules C and E — what the lab said, and what is not saleable */
-function QualityTable({ lots, filter, onPick }) {
-  const total = lots.reduce((s, l) => s + l.qty, 0) || 1;
-
-  const states = [...new Set(lots.map((l) => l.quality))].sort();
-
-  const tone = (q) =>
-    q === "Accept"
-      ? "pill-ok"
-      : q === "Reject"
-        ? "pill-bad"
-        : "pill-warn";
-
-  return (
-    <OverviewPanel
-      label="QUALITY / DISPOSITION"
-      title="Stock by status"
-      side={`${states.length} states`}
-    >
-      <div className="ov-table ov-quality">
-        <div className="ov-row ov-head">
-          <span>STATUS</span>
-          <span>SALEABLE</span>
-          <span className="head-right">LOTS</span>
-          <span className="head-right">QUANTITY</span>
-          <span className="head-right">SHARE</span>
-        </div>
-
-        {states.map((state) => {
-          const hit = lots.filter((l) => l.quality === state);
-          const qty = hit.reduce((s, l) => s + l.qty, 0);
-          const armed =
-            filter?.kind === "quality" && filter.value === state;
-
-          return (
-            <button
-              type="button"
-              key={state}
-              className={`ov-row ${armed ? "ov-armed" : ""}`}
-              onClick={() =>
-                onPick(
-                  armed
-                    ? null
-                    : {
-                        kind: "quality",
-                        value: state,
-                        label: `Quality: ${state}`,
-                      },
-                )
-              }
-            >
-              <span className="ov-key">
-                <i className={`pill ${tone(state)}`}>{state}</i>
-              </span>
-
-              <span className="ov-note">
-                {state === "Accept" ? "Yes" : "No, held"}
-              </span>
-
-              <span className="ov-fig">{hit.length}</span>
-
-              <span className="ov-fig">
-                {qty.toFixed(2)}
-                <em>MT</em>
-              </span>
-
-              <span className="ov-fig">
-                {((qty / total) * 100).toFixed(1)}%
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </OverviewPanel>
-  );
-}
-
 /*
    The register the brief actually asks for: every lot with every
    field it lists, at lot level rather than grade level. This is what
    the KPIs, the reconciliation rings and the two tables above all
    drill into — one table, narrowed by whatever was clicked last.
 */
-function LotRegister({ lots, filter, onClear, onOpen }) {
-  const qty = lots.reduce((s, l) => s + l.qty, 0);
+function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
+  /*
+     Ageing and quality live here as dropdowns rather than as two
+     more tables. They compose with each other and with whatever a
+     KPI or a reconciliation ring armed, so the register can answer
+     "expired AND rejected" instead of one thing at a time.
+  */
+  const [band, setBand] = useState("");
+  const [status, setStatus] = useState("");
+
+  const statuses = [...new Set(lots.map((l) => l.quality))].sort();
+
+  const shown = lots
+    .filter((l) => {
+      const pick = AGE_BANDS.find((x) => x.key === band);
+      return pick ? pick.test(l) : true;
+    })
+    .filter((l) => !status || l.quality === status);
+
+  const qty = shown.reduce((s, l) => s + l.qty, 0);
+
+  /*
+     One chip naming everything that is narrowing the table, and one
+     clear that releases all of it. Two chips that each undo half of
+     the filtering would be worse than none.
+  */
+  const armed = [
+    filter?.label,
+    AGE_BANDS.find((x) => x.key === band)?.label,
+    status ? `Quality: ${status}` : null,
+  ].filter(Boolean);
 
   return (
     <OverviewPanel
+      panelRef={panelRef}
       label="LOT LEVEL"
       title="Lot register"
-      side={`${lots.length} lots · ${qty.toFixed(2)} MT`}
-      filter={filter}
-      onClear={onClear}
+      side={`${shown.length} lots · ${qty.toFixed(2)} MT`}
+      filter={
+        armed.length ? { label: armed.join("  +  ") } : null
+      }
+      onClear={() => {
+        setBand("");
+        setStatus("");
+        onClear();
+      }}
     >
-      {lots.length === 0 ? (
+      {/* Same controls as the grade finder above, so the two read
+          as one family rather than two ideas about filtering. */}
+      <div className="lot-finder">
+        <div className="finder-row">
+          <div className="finder-field">
+            <label htmlFor="reg-band">AGEING WINDOW</label>
+
+            <select
+              id="reg-band"
+              value={band}
+              onChange={(e) => setBand(e.target.value)}
+            >
+              <option value="">
+                All windows · {lots.length} lots
+              </option>
+
+              {AGE_BANDS.map((x) => {
+                const n = lots.filter(x.test).length;
+
+                return (
+                  <option
+                    key={x.key}
+                    value={x.key}
+                    /* Nothing to show, so nothing to pick */
+                    disabled={n === 0}
+                  >
+                    {x.label} · {n} lots
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div className="finder-field">
+            <label htmlFor="reg-status">QUALITY STATUS</label>
+
+            <select
+              id="reg-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="">
+                All statuses · {lots.length} lots
+              </option>
+
+              {statuses.map((s) => (
+                <option key={s} value={s}>
+                  {s} ·{" "}
+                  {lots.filter((l) => l.quality === s).length} lots
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
         <p className="exception-empty">
           No lots match this filter.
         </p>
@@ -1422,7 +1409,7 @@ function LotRegister({ lots, filter, onClear, onOpen }) {
               <span>RECONCILIATION</span>
             </div>
 
-            {lots.map((l) => {
+            {shown.map((l) => {
               const stock = reconcile(l);
 
               return (
@@ -3102,6 +3089,22 @@ function Dashboard({ onSignOut, operator }) {
   */
   const [lotFilter, setLotFilter] = useState(null);
 
+  const registerRef = useRef(null);
+
+  /*
+     After the commit rather than inside the click handler: arming a
+     KPI also resizes the exception table above the register, so a
+     position measured during the click would already be stale by
+     the time the browser scrolled to it.
+  */
+  useEffect(() => {
+    if (!lotFilter) {
+      return;
+    }
+
+    revealRegister(registerRef.current);
+  }, [lotFilter]);
+
   // Soonest to expire first: the register is a work queue
   const registerLots = allLots
     .filter((l) => lotPasses(l, lotFilter))
@@ -3516,7 +3519,15 @@ function Dashboard({ onSignOut, operator }) {
                 const rising = m.delta > 0;
                 const better = m.betterDown ? !rising : rising;
                 const lit = Math.round(m.share * METER_STEPS);
-                const armed = activeKpi === m.key;
+                /*
+                   Driven by the register rather than by activeKpi:
+                   the first card arms the register but deliberately
+                   does not narrow the exception list, so activeKpi
+                   alone would leave it looking unselected.
+                */
+                const armed =
+                  lotFilter?.kind === "kpi" &&
+                  lotFilter.value === m.key;
 
                 return (
                   <button
@@ -3527,14 +3538,16 @@ function Dashboard({ onSignOut, operator }) {
                     }`}
                     aria-pressed={armed}
                     onClick={() => {
-                      const next =
-                        armed || m.key === "all" ? "" : m.key;
+                      const next = armed ? "" : m.key;
 
-                      setActiveKpi(next);
+                      /*
+                         "Total FG Stock" is every lot, which is a
+                         real answer for the register but no filter
+                         at all for a table that already shows only
+                         exceptions — so it arms the register alone.
+                      */
+                      setActiveKpi(next === "all" ? "" : next);
 
-                      /* The same click arms the lot register, so a
-                         KPI answers "which lots?" and not just
-                         "how many?" */
                       setLotFilter(
                         next
                           ? {
@@ -3862,19 +3875,8 @@ function Dashboard({ onSignOut, operator }) {
             }}
           />
 
-          <AgeingTable
-            lots={allLots}
-            filter={lotFilter}
-            onPick={setLotFilter}
-          />
-
-          <QualityTable
-            lots={allLots}
-            filter={lotFilter}
-            onPick={setLotFilter}
-          />
-
           <LotRegister
+            panelRef={registerRef}
             lots={registerLots}
             filter={lotFilter}
             onClear={() => {

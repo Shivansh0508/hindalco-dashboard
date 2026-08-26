@@ -6280,17 +6280,6 @@ button {
   text-align: left;
 }
 
-/* The two summary tables share a shape; the register is wider */
-.ov-age .ov-row,
-.ov-quality .ov-row {
-  grid-template-columns:
-    minmax(150px, 1fr)
-    minmax(160px, 1.2fr)
-    80px
-    130px
-    110px;
-}
-
 .ov-register .ov-row {
   grid-template-columns:
     minmax(150px, 1.1fr)
@@ -6397,20 +6386,6 @@ button {
     edge-sweep 0.85s ease-out forwards;
 }
 
-/*
-   Stays lit while it is the armed filter. Listed after the zebra
-   rule and matched at the same weight, so it wins on order rather
-   than needing !important.
-*/
-.ov-row.ov-armed:not(.ov-head) {
-  background-color:
-    rgba(226, 184, 59, 0.14);
-}
-
-.ov-armed .ov-key {
-  color: #e2b83b;
-}
-
 .ov-key {
   font-size: 13px;
   font-weight: 700;
@@ -6479,17 +6454,6 @@ button {
 
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.09);
-}
-
-.dashboard-page.light-mode
-.ov-row.ov-armed:not(.ov-head) {
-  background-color:
-    rgba(146, 113, 39, 0.16);
-}
-
-.dashboard-page.light-mode
-.ov-armed .ov-key {
-  color: #7d6021;
 }
 
 .dashboard-page.light-mode
