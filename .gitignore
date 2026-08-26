@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# The auto-push script's own log. Must stay untracked: if Git saw it,
+# every run would commit the log written by the previous run and the
+# task would never stop finding changes.
+scripts/auto-push.log
