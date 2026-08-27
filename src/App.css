@@ -3911,6 +3911,7 @@ button {
   flex-wrap: wrap;
 }
 
+/* A button now, so it needs the UA chrome stripped */
 .horizon-chip {
   display: inline-flex;
 
@@ -3926,10 +3927,29 @@ button {
 
   border-radius: 16px;
 
+  background: transparent;
+
+  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
 
   color: #d7d9da;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.horizon-chip:hover {
+  transform: translateY(-1px);
+
+  border-color: #6f767b;
+
+  background:
+    rgba(255, 255, 255, 0.05);
 }
 
 .horizon-chip i {
@@ -5951,22 +5971,9 @@ button {
 
   align-items: center;
 
-  padding: 5px 11px 5px 9px;
+  padding: 5px 11px;
 
   border-radius: 0;
-
-  /*
-     Full strength on the edge, softer for the label. Inheriting
-     currentColor made the edge as pale as the text and the tag
-     lost the thing that makes it read as a tag.
-
-     Longhands, not the shorthand: a var() that fails to resolve
-     invalidates the whole declaration it sits in, which would take
-     the width and style down with the colour.
-  */
-  border-left-width: 3px;
-  border-left-style: solid;
-  border-left-color: var(--edge, currentColor);
 
   /* 7px off the top-right corner, which is what stops this reading
      as one more rounded chip */
@@ -6303,6 +6310,82 @@ button {
   text-align: left;
 }
 
+.ov-ageing .ov-row {
+  grid-template-columns:
+    minmax(148px, 1.05fr)
+    72px
+    104px
+    96px
+    96px
+    92px
+    124px
+    minmax(118px, 1fr);
+}
+
+/* Shelf life consumed: a track plus the figure, so the bar is read
+   as a proportion and the number stays available for a report. */
+.age-used {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    34px;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+.age-track {
+  height: 5px;
+
+  border-radius: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  overflow: hidden;
+}
+
+.age-track i {
+  display: block;
+
+  width: 0;
+  height: 100%;
+
+  border-radius: 3px;
+
+  background: #6f7a82;
+}
+
+/* The fill takes the same tone the age column already carries, so
+   the bar and the words never disagree. */
+.age-track.tone-expired i {
+  background: #e34948;
+}
+
+.age-track.tone-urgent i {
+  background: #e2622a;
+}
+
+.age-track.tone-soon i {
+  background: #e2b83b;
+}
+
+.age-track.tone-clear i {
+  background: #2fd39b;
+}
+
+.age-pct {
+  font-size: 11px;
+
+  text-align: right;
+
+  color: #9aa1a6;
+
+  font-variant-numeric: tabular-nums;
+}
+
 .ov-register .ov-row {
   grid-template-columns:
     minmax(150px, 1.1fr)
@@ -6477,6 +6560,16 @@ button {
 
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.09);
+}
+
+.dashboard-page.light-mode
+.age-track {
+  background: #e7e5e0;
+}
+
+.dashboard-page.light-mode
+.age-pct {
+  color: #767676;
 }
 
 .dashboard-page.light-mode
@@ -6734,6 +6827,13 @@ button {
 .dashboard-page.light-mode
 .horizon-track i {
   background: #c2521f;
+}
+
+.dashboard-page.light-mode
+.horizon-chip:hover {
+  border-color: #a9a9a2;
+
+  background: #f1f1ee;
 }
 
 .dashboard-page.light-mode
@@ -7923,25 +8023,6 @@ button {
    exception is visible without reading all four tiles.
 ========================================================= */
 
-/*
-   All four carry a bar, not just the two exceptions — a rule that
-   appears on half a row reads as a mistake rather than a signal.
-   The severity is in the colour instead.
-*/
-.metric-card::before {
-  content: "";
-
-  position: absolute;
-
-  top: 0;
-  bottom: 0;
-  left: 0;
-
-  width: 3px;
-
-  background: var(--accent, #6a7378);
-}
-
 .metric-card.metric-armed {
   border-color: var(--accent, #6a7378);
 
@@ -8071,6 +8152,31 @@ button {
 /* =========================================================
    LIGHT MODE HOVER
 ========================================================= */
+
+/*
+   Armed has to survive hover. Both .metric-card.metric-armed and
+   .metric-card:hover weigh (0,2,0) and the hover rules are written
+   later, so without these the border and ring revert the moment you
+   point at the card you just selected. The tone bar used to hide
+   that; with the bar gone the armed state is the only signal there
+   is.
+*/
+.metric-card.metric-armed:hover {
+  border-color: var(--accent, #6a7378);
+
+  box-shadow:
+    0 0 0 1px var(--accent, #6a7378),
+    0 18px 38px rgba(0, 0, 0, 0.42);
+}
+
+.dashboard-page.light-mode
+.metric-card.metric-armed:hover {
+  border-color: var(--accent, #6a7378);
+
+  box-shadow:
+    0 0 0 1px var(--accent, #6a7378),
+    0 18px 38px rgba(0, 0, 0, 0.16);
+}
 
 .dashboard-page.light-mode
 .metric-card:hover {

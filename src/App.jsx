@@ -436,6 +436,26 @@ function lotPasses(lot, filter) {
   return true;
 }
 
+/*
+   Stops rather than a linear 0-365. The slider used to stop at 30
+   days, which left 12 of 20 lots unreachable on the one tab meant
+   to show ageing; a linear range to a year would put the useful end
+   inside the first 8% of the track.
+*/
+const HORIZON_STOPS = [0, 7, 30, 90, 180, 365];
+
+/* How far through its own shelf life a lot is, which is not the
+   same question as how many days are left: 4 days remaining means
+   something different on a 30-day product than on a 365-day one. */
+function shelfUsed(lot) {
+  const shelf = gradeBook[lot.grade].shelfDays;
+
+  return Math.max(
+    0,
+    Math.min(100, ((shelf - lot.daysLeft) / shelf) * 100),
+  );
+}
+
 const METER_STEPS = 22;
 
 const reconciliation = [
@@ -1278,6 +1298,135 @@ function OverviewPanel({
       </div>
 
       {children}
+    </section>
+  );
+}
+
+/*
+   Module A's own register: every lot in expiry order, for one grade
+   or all of them. The horizon panel above answers "how much is
+   about to go"; this answers "which lots, and where are they".
+*/
+function AgeingRegister({ lots, onOpen }) {
+  const [grade, setGrade] = useState("");
+
+  const grades = [...new Set(lots.map((l) => l.grade))].sort();
+
+  // Soonest to expire first, which is the order you would work it
+  const shown = lots
+    .filter((l) => !grade || l.grade === grade)
+    .slice()
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  const qty = shown.reduce((s, l) => s + l.qty, 0);
+
+  return (
+    <section className="exception-panel">
+      <div className="panel-header">
+        <div>
+          <p className="panel-label">AGE ANALYSIS</p>
+          <h2>Ageing register</h2>
+        </div>
+
+        <span className="panel-side">
+          {shown.length} lots · {qty.toFixed(2)} MT
+        </span>
+      </div>
+
+      <div className="lot-finder">
+        <div className="finder-row">
+          <div className="finder-field">
+            <label htmlFor="age-grade">GRADE</label>
+
+            <select
+              id="age-grade"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            >
+              <option value="">
+                All grades · {lots.length} lots
+              </option>
+
+              {grades.map((g) => (
+                <option key={g} value={g}>
+                  {g} ·{" "}
+                  {lots.filter((l) => l.grade === g).length} lots
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="exception-scroll">
+        <div className="ov-table ov-ageing">
+          <div className="ov-row ov-head">
+            <span>LOT</span>
+            <span>GRADE</span>
+            <span className="head-right">QUANTITY</span>
+            <span>PRODUCED</span>
+            <span>EXPIRES</span>
+            <span>AGE</span>
+            <span>SHELF LIFE USED</span>
+            <span>LOCATION</span>
+          </div>
+
+          {shown.map((l) => {
+            const used = shelfUsed(l);
+
+            return (
+              <button
+                type="button"
+                key={l.id}
+                className="ov-row"
+                onClick={() => onOpen(l)}
+                title="Open the full record for this lot"
+              >
+                <span className="ov-key">{l.id}</span>
+
+                <span className="ov-note">{l.grade}</span>
+
+                <span className="ov-fig">
+                  {l.qty.toFixed(2)}
+                  <em>MT</em>
+                </span>
+
+                <span className="ov-note">
+                  {stampFmt.format(l.produced)}
+                </span>
+
+                <span className="ov-note">
+                  {stampFmt.format(l.expires)}
+                </span>
+
+                <span
+                  className={`ov-note ${expiryTone(l.daysLeft)}`}
+                >
+                  {ageLabel(l.daysLeft)}
+                </span>
+
+                {/* Proportion of its own shelf life, so grades with
+                    different shelf lives stay comparable */}
+                <span className="age-used">
+                  <span
+                    className={`age-track tone-${expiryTone(
+                      l.daysLeft,
+                    )}`}
+                  >
+                    <i style={{ width: `${used}%` }} />
+                  </span>
+
+                  <span className="age-pct">
+                    {used.toFixed(0)}%
+                  </span>
+                </span>
+
+                <span className="ov-note">{l.location}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }
@@ -3203,7 +3352,10 @@ function Dashboard({ onSignOut, operator }) {
      too — "reaches expiry within 7 days" has to include the ones
      that got there first, or the number understates the problem.
   */
-  const [horizon, setHorizon] = useState(7);
+  // Index into HORIZON_STOPS, so the steps stay evenly spaced
+  const [horizonStep, setHorizonStep] = useState(1);
+
+  const horizon = HORIZON_STOPS[horizonStep];
 
   const horizonLots = allLots.filter((l) => l.daysLeft <= horizon);
 
@@ -3218,6 +3370,93 @@ function Dashboard({ onSignOut, operator }) {
   const horizonPast = horizonLots.filter(
     (l) => l.daysLeft < 0,
   ).length;
+
+  /*
+     Both Age Analysis panels are derived now. They used to be
+     hardcoded and disagreed with the slider directly above them —
+     648.2 MT against 320.13 MT for the same question — and named a
+     lot, LOT-2024-0881, that is not in the register.
+  */
+  const ageBuckets = AGE_BANDS.map((b) => {
+    const hit = allLots.filter(b.test);
+    const qty = hit.reduce((s, l) => s + l.qty, 0);
+
+    return {
+      name: b.label,
+      value: qty,
+      display: `${qty.toFixed(1)} MT`,
+      tone:
+        b.key === "expired" || b.key === "week"
+          ? "red"
+          : b.key === "clear"
+            ? "green"
+            : "yellow",
+    };
+  });
+
+  const oldestLot = allLots.reduce(
+    (a, l) => (l.daysLeft < a.daysLeft ? l : a),
+    allLots[0],
+  );
+
+  const expiredLots = allLots.filter((l) => l.daysLeft < 0);
+
+  const monthLots = allLots.filter(
+    (l) => l.daysLeft >= 0 && l.daysLeft <= 30,
+  );
+
+  // Weighted by tonnage: one small old lot should not skew it
+  const avgUsed = holdingQty
+    ? allLots.reduce(
+        (s, l) => s + shelfUsed(l) * l.qty,
+        0,
+      ) / holdingQty
+    : 0;
+
+  /*
+     Two places open a record from the Age Analysis tab now — the
+     chips and the register — so the navigation lives in one place.
+     The record only renders on Overview, so opening one has to take
+     the tab with it.
+  */
+  const openRecord = (lot) => {
+    setActiveTab("Overview");
+    setGrade(lot.grade);
+    setLotId(lot.id);
+    setQuery("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const ageStats = [
+    {
+      name: "Shelf life used",
+      value: `${avgUsed.toFixed(0)}%`,
+      note: "Weighted by tonnage",
+      tone: "",
+    },
+    {
+      name: "Oldest lot",
+      value: ageLabel(oldestLot.daysLeft),
+      note: oldestLot.id,
+      tone: "danger",
+    },
+    {
+      name: "Already expired",
+      value: `${expiredLots
+        .reduce((s, l) => s + l.qty, 0)
+        .toFixed(1)} MT`,
+      note: `${expiredLots.length} lots`,
+      tone: "danger",
+    },
+    {
+      name: "Expiring in 30 days",
+      value: `${monthLots
+        .reduce((s, l) => s + l.qty, 0)
+        .toFixed(1)} MT`,
+      note: `${monthLots.length} lots`,
+      tone: "warning",
+    },
+  ];
 
   /*
      Opening a record swaps the page rather than filtering in
@@ -3644,15 +3883,20 @@ function Dashboard({ onSignOut, operator }) {
                   <input
                     type="range"
                     min="0"
-                    max="30"
+                    max={HORIZON_STOPS.length - 1}
                     step="1"
-                    value={horizon}
-                    aria-label="Expiry horizon in days"
+                    value={horizonStep}
+                    aria-label="Expiry horizon"
+                    aria-valuetext={`${horizon} days`}
                     style={{
-                      "--fill": `${(horizon / 30) * 100}%`,
+                      "--fill": `${
+                        (horizonStep /
+                          (HORIZON_STOPS.length - 1)) *
+                        100
+                      }%`,
                     }}
                     onChange={(e) =>
-                      setHorizon(Number(e.target.value))
+                      setHorizonStep(Number(e.target.value))
                     }
                   />
 
@@ -3704,22 +3948,43 @@ function Dashboard({ onSignOut, operator }) {
                     .slice()
                     .sort((a, b) => a.daysLeft - b.daysLeft)
                     .map((l) => (
-                      <span
+                      <button
+                        type="button"
                         key={l.id}
                         className={`horizon-chip hz-${
                           expiryTone(l.daysLeft)
                         }`}
+                        onClick={() => openRecord(l)}
+                        title="Open the full record for this lot"
                       >
                         {l.id}
                         <i>{ageLabel(l.daysLeft)}</i>
-                      </span>
+                      </button>
                     ))}
                 </div>
               )}
             </section>
           )}
 
-          {tabContent[activeTab] ? (
+          {activeTab === "Age Analysis" ? (
+          <>
+            <section className="dashboard-panels" key={activeTab}>
+              <BarWidget
+                label="AGEING"
+                title="Stock by age bucket"
+                rows={ageBuckets}
+              />
+
+              <StatWidget
+                label="EXPOSURE"
+                title="Ageing risk"
+                stats={ageStats}
+              />
+            </section>
+
+            <AgeingRegister lots={allLots} onOpen={openRecord} />
+          </>
+          ) : tabContent[activeTab] ? (
             <section className="dashboard-panels" key={activeTab}>
               <BarWidget {...tabContent[activeTab].bar} />
               <StatWidget {...tabContent[activeTab].stat} />
