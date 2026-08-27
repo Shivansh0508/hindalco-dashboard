@@ -1309,12 +1309,16 @@ function OverviewPanel({
 */
 function AgeingRegister({ lots, onOpen }) {
   const [grade, setGrade] = useState("");
+  const [find, setFind] = useState("");
+
+  const typed = find.trim().toLowerCase();
 
   const grades = [...new Set(lots.map((l) => l.grade))].sort();
 
   // Soonest to expire first, which is the order you would work it
   const shown = lots
     .filter((l) => !grade || l.grade === grade)
+    .filter((l) => !typed || l.id.toLowerCase().includes(typed))
     .slice()
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
@@ -1354,6 +1358,19 @@ function AgeingRegister({ lots, onOpen }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="finder-field">
+            <label htmlFor="age-find">LOT NUMBER</label>
+
+            <input
+              id="age-find"
+              type="search"
+              value={find}
+              placeholder="Search a lot"
+              autoComplete="off"
+              onChange={(e) => setFind(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -1446,6 +1463,9 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
   */
   const [band, setBand] = useState("");
   const [status, setStatus] = useState("");
+  const [find, setFind] = useState("");
+
+  const typed = find.trim().toLowerCase();
 
   const statuses = [...new Set(lots.map((l) => l.quality))].sort();
 
@@ -1454,7 +1474,10 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
       const pick = AGE_BANDS.find((x) => x.key === band);
       return pick ? pick.test(l) : true;
     })
-    .filter((l) => !status || l.quality === status);
+    .filter((l) => !status || l.quality === status)
+    /* Substring, not prefix: operators quote the tail of a lot
+       number far more often than the whole thing. */
+    .filter((l) => !typed || l.id.toLowerCase().includes(typed));
 
   const qty = shown.reduce((s, l) => s + l.qty, 0);
 
@@ -1467,6 +1490,7 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
     filter?.label,
     AGE_BANDS.find((x) => x.key === band)?.label,
     status ? `Quality: ${status}` : null,
+    typed ? `Lot: ${find.trim()}` : null,
   ].filter(Boolean);
 
   return (
@@ -1481,6 +1505,7 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
       onClear={() => {
         setBand("");
         setStatus("");
+        setFind("");
         onClear();
       }}
     >
@@ -1536,6 +1561,19 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="finder-field">
+            <label htmlFor="reg-find">LOT NUMBER</label>
+
+            <input
+              id="reg-find"
+              type="search"
+              value={find}
+              placeholder="Search a lot"
+              autoComplete="off"
+              onChange={(e) => setFind(e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -1626,6 +1664,20 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
 
 function ExceptionTable({ rows, filterLabel, onClear, children }) {
   const [copied, setCopied] = useState(null);
+  const [find, setFind] = useState("");
+
+  const typed = find.trim().toLowerCase();
+
+  const shown = rows.filter(
+    (r) => !typed || r.id.toLowerCase().includes(typed),
+  );
+
+  /* One chip for whatever is narrowing this table, matching how the
+     lot register names its filters. */
+  const armed = [
+    filterLabel,
+    typed ? `Lot: ${find.trim()}` : null,
+  ].filter(Boolean);
 
   // The tag is a confirmation, not a state worth keeping
   useEffect(() => {
@@ -1656,13 +1708,16 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
         </div>
 
         <div className="panel-actions">
-          {filterLabel ? (
+          {armed.length ? (
             <button
               type="button"
               className="filter-chip"
-              onClick={onClear}
+              onClick={() => {
+                setFind("");
+                onClear();
+              }}
             >
-              {filterLabel}
+              {armed.join("  +  ")}
               <i>clear</i>
             </button>
           ) : null}
@@ -1671,7 +1726,7 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
             <button
               type="button"
               className="export-btn"
-              onClick={() => exportCsv(rows)}
+              onClick={() => exportCsv(shown)}
               title="Download these rows as a CSV"
             >
               <svg
@@ -1695,7 +1750,24 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
 
       {children}
 
-      {rows.length === 0 ? (
+      <div className="lot-finder">
+        <div className="finder-row">
+          <div className="finder-field">
+            <label htmlFor="ex-find">LOT NUMBER</label>
+
+            <input
+              id="ex-find"
+              type="search"
+              value={find}
+              placeholder="Search a lot"
+              autoComplete="off"
+              onChange={(e) => setFind(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {shown.length === 0 ? (
         <p className="exception-empty">
           No lots match this filter.
         </p>
@@ -1714,7 +1786,7 @@ function ExceptionTable({ rows, filterLabel, onClear, children }) {
               ))}
             </div>
 
-            {rows.map((r) => (
+            {shown.map((r) => (
               <div
                 className={`exception-row ${
                   r.manual === 0 ? "ex-missing" : ""
@@ -3746,9 +3818,16 @@ function Dashboard({ onSignOut, operator }) {
           </section>
         )}
 
-        {/* The register answers the same question in far more
-            detail, so the summary view stands down while it is open. */}
-        {!browsing && (
+        {/*
+           The register answers the same question in far more detail,
+           so the summary view stands down while it is open — but only
+           on Overview, which is the tab the register belongs to.
+
+           Gating on browsing alone blanked every other tab too: pick
+           a grade anywhere and Age Analysis, PPC and Quality all went
+           empty, because browsing stays true across a tab change.
+        */}
+        {(activeTab !== "Overview" || !browsing) && (
           <>
           {/* Plant-wide KPIs answer the Overview question; the other
               tabs each have their own figures below. */}
