@@ -5267,6 +5267,19 @@ button {
   opacity: 0.38;
 }
 
+/*
+   Light mode dims less than dark. Dimming on a dark surface moves a
+   value toward black and thin strokes keep their edge; on white it
+   moves everything toward the background, and a 1px border at 38%
+   is gone. 62% still recedes without erasing anything.
+*/
+.dashboard-page.light-mode
+.grade-grid:hover .grade-row:not(.grade-head),
+.dashboard-page.light-mode
+.exception-table:hover .exception-row:not(.exception-head) {
+  opacity: 0.62;
+}
+
 .grade-grid:hover .grade-row:not(.grade-head):hover,
 .exception-table:hover .exception-row:not(.exception-head):hover {
   opacity: 1;
@@ -5400,6 +5413,11 @@ button {
 /* Dimmed with the rows, but lit again on its own hover */
 .grade-grid:hover .grade-detail {
   opacity: 0.38;
+}
+
+.dashboard-page.light-mode
+.grade-grid:hover .grade-detail {
+  opacity: 0.62;
 }
 
 .grade-grid:hover .grade-detail:hover {
@@ -5966,63 +5984,88 @@ button {
    The label still spells the state out, so colour is never the only
    thing carrying it.
 */
+/*
+   Bracketed, not boxed. The brackets carry the status colour and
+   the word stays ordinary text ink, so the colour does one job in
+   one place. Monospace because it is a coded state rather than
+   prose — it reads like a batch record, which is what it is.
+
+   No border, no fill, no clipped corner: the previous notched
+   outline could not close its own cut, since clip-path trims the
+   border along with the box.
+*/
 .pill {
   display: inline-flex;
 
-  align-items: center;
+  align-items: baseline;
 
-  padding: 5px 11px;
+  padding: 0;
 
-  border-radius: 0;
+  border: none;
 
-  /* 7px off the top-right corner, which is what stops this reading
-     as one more rounded chip */
-  clip-path:
-    polygon(
-      0 0,
-      calc(100% - 7px) 0,
-      100% 7px,
-      100% 100%,
-      0 100%
-    );
+  background: none;
+
+  font-family:
+    ui-monospace,
+    "SF Mono",
+    "Cascadia Mono",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace;
 
   font-style: normal;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 
-  letter-spacing: 0.6px;
+  letter-spacing: 0.4px;
 
   text-transform: uppercase;
 
   white-space: nowrap;
+
+  color: #d7d9da;
 }
 
+/* A shade larger than the word, so a thin glyph still registers */
+.pill::before,
+.pill::after {
+  color: var(--edge, currentColor);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pill::before {
+  content: "[";
+
+  margin-right: 6px;
+}
+
+.pill::after {
+  content: "]";
+
+  margin-left: 6px;
+}
+
+
+/*
+   Only --edge differs between the three. The label stays the
+   ordinary text colour, so the colour is doing one job in one
+   place rather than tinting the fill and the words as well.
+*/
 .pill-bad {
   --edge: #e34948;
-
-  background:
-    rgba(227, 73, 72, 0.13);
-
-  color: #f2a0a0;
 }
 
 .pill-warn {
   --edge: #e2b83b;
-
-  background:
-    rgba(226, 184, 59, 0.12);
-
-  color: #e6c877;
 }
 
 .pill-ok {
   --edge: #2fd39b;
-
-  background:
-    rgba(47, 211, 155, 0.11);
-
-  color: #74e0b8;
 }
+
 
 /* ---- manual against PL2P ---- */
 
@@ -6449,6 +6492,11 @@ button {
 
 .ov-table:hover .ov-row:not(.ov-head) {
   opacity: 0.38;
+}
+
+.dashboard-page.light-mode
+.ov-table:hover .ov-row:not(.ov-head) {
+  opacity: 0.62;
 }
 
 .ov-table:hover .ov-row:not(.ov-head):hover {
@@ -7196,34 +7244,30 @@ button {
   color: #171717;
 }
 
+/*
+   Darker than the dark-mode steps, because these are 1px strokes on
+   white and they still have to read at 62% opacity when focus mode
+   pushes an unhovered row back. At the old values a dimmed border
+   measured 1.5-1.9:1 against the panel, which is invisible.
+*/
 .dashboard-page.light-mode
 .pill-bad {
-  --edge: #c0332f;
-
-  background:
-    rgba(192, 51, 47, 0.10);
-
-  color: #a52c28;
+  --edge: #a82722;
 }
 
 .dashboard-page.light-mode
 .pill-warn {
-  --edge: #a9862a;
-
-  background:
-    rgba(146, 113, 39, 0.12);
-
-  color: #74591e;
+  --edge: #7d5c10;
 }
 
 .dashboard-page.light-mode
 .pill-ok {
-  --edge: #15895c;
+  --edge: #0e6a45;
+}
 
-  background:
-    rgba(21, 137, 92, 0.10);
-
-  color: #12784f;
+.dashboard-page.light-mode
+.pill {
+  color: #333333;
 }
 
 .dashboard-page.light-mode
