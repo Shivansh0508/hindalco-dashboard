@@ -54,6 +54,15 @@ button {
   object-fit: cover;
 }
 
+/*
+   Settles the video down so the form beside it stays the loudest
+   thing on the page. Heavier at the foot than the head, because
+   the brighter part of the footage sits low in the frame.
+
+   The login scrim multiplies with this, but only on the right —
+   its left edge is fully transparent — so on the video side this
+   is the only thing setting the brightness.
+*/
 .home-overlay {
   position: absolute;
   inset: 0;
@@ -61,8 +70,8 @@ button {
   background:
     linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.20),
-      rgba(0, 0, 0, 0.38)
+      rgba(0, 0, 0, 0.30),
+      rgba(0, 0, 0, 0.46)
     );
 }
 
@@ -79,42 +88,87 @@ button {
   position: absolute;
   z-index: 3;
 
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
 
-  padding: 40px clamp(24px, 5vw, 72px);
+  /*
+     Wider than the reading area because the leading third of it
+     is a fade. Solid ground begins around 78% across the window,
+     leaving the video legible over roughly the first two thirds.
+  */
+  width: 42%;
+
+  min-width: 440px;
+
+  /*
+     Anchored to the right rather than centred in the panel — the
+     panel's leading third is only a fade, so centring inside it
+     parked the form further left than it looked like it should.
+     Left padding stays small since that side is the fade.
+  */
+  padding:
+    40px
+    clamp(44px, 4.5vw, 96px)
+    40px
+    32px;
 
   display: flex;
 
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 
-  /*
-     Darkest under the card and easing off toward the corners, so
-     the form has solid ground while the video still shows at the
-     edges. The old scrim was a left-to-right fade because the form
-     sat in a right-hand strip; centred, that would have put the
-     heaviest part of the wash nowhere near the reading.
-  */
   background:
-    radial-gradient(
-      ellipse 64% 80% at 50% 50%,
-      rgba(9, 11, 13, 0.94) 0%,
-      rgba(9, 11, 13, 0.88) 45%,
-      rgba(9, 11, 13, 0.66) 100%
+    linear-gradient(
+      90deg,
+      rgba(9, 11, 13, 0) 0%,
+      rgba(9, 11, 13, 0.55) 14%,
+      rgba(9, 11, 13, 0.9) 32%,
+      rgba(9, 11, 13, 0.98) 50%,
+      #090b0d 68%
     );
 
-  /*
-     Fades rather than sliding in. A centred panel that arrives from
-     one side has to travel the whole window to get there, and the
-     card carries its own entrance a beat later anyway.
-  */
-  opacity: 0;
+  transform: translateX(100%);
 
-  transition: opacity 0.7s ease;
+  transition:
+    transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 .login-shell-open {
-  opacity: 1;
+  transform: translateX(0);
+}
+
+/*
+   Narrower windows leave the panel barely wider than the form, so
+   the form ends up sitting in the fade. Pulling the stops in keeps
+   solid ground under the text; the transition is shorter but the
+   part of it left visible beside the form still reads as a wash.
+*/
+@media (max-width: 1600px) {
+
+  .login-shell {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9, 11, 13, 0) 0%,
+        rgba(9, 11, 13, 0.8) 9%,
+        rgba(9, 11, 13, 0.96) 20%,
+        #090b0d 32%
+      );
+  }
+}
+
+@media (max-width: 1150px) {
+
+  .login-shell {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(9, 11, 13, 0) 0%,
+        rgba(9, 11, 13, 0.93) 5%,
+        #090b0d 13%
+      );
+  }
 }
 
 .login-card {
@@ -5173,7 +5227,8 @@ button {
 
   transition:
     background-color 0.16s ease,
-    box-shadow 0.16s ease;
+    box-shadow 0.16s ease,
+    padding-left 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /*
@@ -5245,55 +5300,23 @@ button {
   transition:
     background-color 0.16s ease,
     box-shadow 0.16s ease,
+    padding-left 0.18s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.22s ease;
 }
 
 /*
-   A short bright segment that runs the length of the row once, on
-   arrival. Travelling rather than simply appearing, so the eye is
-   pulled along the row it is about to read.
+   The row's contents shift right as it lights, and settle back when
+   you leave — like pulling a card part-way out of a drawer.
+
+   Padding rather than a transform: these tables sit in a horizontal
+   scroller, and a transformed child adds to the scroll extent, so
+   a 6px nudge would have been enough to flicker a scrollbar in and
+   out on every hover.
 */
-.grade-row:not(.grade-head)::after,
-.exception-row:not(.exception-head)::after {
-  content: "";
-
-  position: absolute;
-
-  left: -34%;
-  bottom: 0;
-
-  width: 34%;
-  height: 2px;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      #e2b83b,
-      transparent
-    );
-
-  opacity: 0;
-
-  pointer-events: none;
-}
-
-.grade-row:not(.grade-head):hover::after,
-.exception-row:not(.exception-head):hover::after {
-  animation:
-    edge-sweep 0.85s ease-out forwards;
-}
-
-@keyframes edge-sweep {
-  from {
-    left: -34%;
-    opacity: 1;
-  }
-
-  to {
-    left: 100%;
-    opacity: 1;
-  }
+.grade-row:not(.grade-head):hover,
+.exception-row:not(.exception-head):hover,
+.ov-row:not(.ov-head):hover {
+  padding-left: 22px;
 }
 
 
@@ -5654,7 +5677,8 @@ button {
 
   transition:
     background-color 0.16s ease,
-    box-shadow 0.16s ease;
+    box-shadow 0.16s ease,
+    padding-left 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Every row here is a div including the head, so nth-child is
@@ -6447,6 +6471,7 @@ button {
   transition:
     background-color 0.16s ease,
     box-shadow 0.16s ease,
+    padding-left 0.18s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.22s ease;
 }
 
@@ -6476,34 +6501,6 @@ button {
     0 6px 18px rgba(0, 0, 0, 0.38);
 }
 
-.ov-row:not(.ov-head)::after {
-  content: "";
-
-  position: absolute;
-
-  left: -34%;
-  bottom: 0;
-
-  width: 34%;
-  height: 2px;
-
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      #e2b83b,
-      transparent
-    );
-
-  opacity: 0;
-
-  pointer-events: none;
-}
-
-.ov-row:not(.ov-head):hover::after {
-  animation:
-    edge-sweep 0.85s ease-out forwards;
-}
 
 .ov-key {
   font-size: 13px;
@@ -8464,8 +8461,6 @@ button {
   .record-head,
   .move-row,
   .shelf-fill,
-  .grade-row::after,
-  .exception-row::after,
   .export-btn::after,
   .bar-fill {
     animation: none;
@@ -8673,15 +8668,19 @@ button {
 
 @media (max-width: 900px) {
 
-  /*
-     A flat scrim on a small window: the vignette needs room to fall
-     off, and at this width its light edge would sit under the form.
-  */
+  /* No room for a fade — the scrim covers the window instead */
   .login-shell {
+    width: 100%;
+
+    min-width: 0;
+
     padding: 28px;
 
+    /* Full-width scrim has no fade to sit clear of, so re-centre */
+    justify-content: center;
+
     background:
-      rgba(9, 11, 13, 0.92);
+      rgba(9, 11, 13, 0.84);
 
     backdrop-filter: blur(18px);
   }
