@@ -1465,6 +1465,9 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
   const [status, setStatus] = useState("");
   const [find, setFind] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+
   const typed = find.trim().toLowerCase();
 
   const statuses = [...new Set(lots.map((l) => l.quality))].sort();
@@ -1486,6 +1489,44 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
      clear that releases all of it. Two chips that each undo half of
      the filtering would be worse than none.
   */
+  const pages = Math.max(1, Math.ceil(shown.length / perPage));
+
+  /*
+     Clamped rather than trusted. Narrowing the filter can leave the
+     stored page past the end of the new result, and a page number
+     with nothing under it reads as a broken table.
+  */
+  const current = Math.min(page, pages);
+
+  const windowed = shown.slice(
+    (current - 1) * perPage,
+    current * perPage,
+  );
+
+  /*
+     Any change to what is being filtered starts again at page one.
+     Staying on page 3 of a result that just became one page long is
+     the same empty table by a different route.
+
+     Adjusted during render rather than in an effect: an effect
+     would paint the stale page first and correct it after, and
+     React rightly flags that as a cascading render.
+  */
+  const signature = [
+    band,
+    status,
+    typed,
+    filter?.label ?? "",
+    perPage,
+  ].join("|");
+
+  const [lastSignature, setLastSignature] = useState(signature);
+
+  if (lastSignature !== signature) {
+    setLastSignature(signature);
+    setPage(1);
+  }
+
   const armed = [
     filter?.label,
     AGE_BANDS.find((x) => x.key === band)?.label,
@@ -1596,7 +1637,7 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
               <span>RECONCILIATION</span>
             </div>
 
-            {shown.map((l) => {
+            {windowed.map((l) => {
               const stock = reconcile(l);
 
               return (
@@ -1658,6 +1699,57 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
           </div>
         </div>
       )}
+
+      {shown.length > 0 ? (
+        <div className="table-foot">
+          <label className="rows-per">
+            Rows per page:
+            <select
+              value={perPage}
+              onChange={(e) => setPerPage(Number(e.target.value))}
+              aria-label="Rows per page"
+            >
+              {[10, 25, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <p className="page-count">
+            Page <b>{current}</b> of <b>{pages}</b>
+            <em>
+              ({shown.length}{" "}
+              {shown.length === 1 ? "lot" : "lots"})
+            </em>
+          </p>
+
+          <div className="page-nav">
+            <button
+              type="button"
+              onClick={() => setPage(current - 1)}
+              disabled={current <= 1}
+            >
+              <svg viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 1 1.5 6 6 11" />
+              </svg>
+              Prev
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPage(current + 1)}
+              disabled={current >= pages}
+            >
+              Next
+              <svg viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 1 6.5 6 2 11" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
     </OverviewPanel>
   );
 }
