@@ -1482,13 +1482,21 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
        number far more often than the whole thing. */
     .filter((l) => !typed || l.id.toLowerCase().includes(typed));
 
-  const qty = shown.reduce((s, l) => s + l.qty, 0);
-
   /*
-     One chip naming everything that is narrowing the table, and one
-     clear that releases all of it. Two chips that each undo half of
-     the filtering would be worse than none.
+     One total per feed. Summing lot.qty gave a figure that was
+     neither: it is the manual reading on most rows, but the PL2P
+     reading on any lot the manual register never saw.
   */
+  const manualQty = shown.reduce(
+    (s, l) => s + reconcile(l).manual,
+    0,
+  );
+
+  const pl2pQty = shown.reduce(
+    (s, l) => s + reconcile(l).pl2p,
+    0,
+  );
+
   const pages = Math.max(1, Math.ceil(shown.length / perPage));
 
   /*
@@ -1539,7 +1547,7 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
       panelRef={panelRef}
       label="LOT LEVEL"
       title="Lot register"
-      side={`${shown.length} lots · ${qty.toFixed(2)} MT`}
+      side={`${shown.length} lots · M ${manualQty.toFixed(2)} · P ${pl2pQty.toFixed(2)} MT`}
       filter={
         armed.length ? { label: armed.join("  +  ") } : null
       }
@@ -1629,9 +1637,9 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
             <div className="ov-row ov-head">
               <span>LOT</span>
               <span>GRADE</span>
-              <span className="head-right">QUANTITY</span>
+              <span className="head-right">MANUAL</span>
+              <span className="head-right">PL2P</span>
               <span>EXPIRES</span>
-              <span>AGE</span>
               <span>LOCATION</span>
               <span>QUALITY</span>
               <span>RECONCILIATION</span>
@@ -1652,19 +1660,27 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
 
                   <span className="ov-note">{l.grade}</span>
 
+                  {/* Blank, not 0.00 - the manual register has
+                      never seen this lot, which is a different
+                      thing from it recording nothing. */}
                   <span className="ov-fig">
-                    {l.qty.toFixed(2)}
+                    {stock.manual === 0 ? (
+                      <s>—</s>
+                    ) : (
+                      <>
+                        {stock.manual.toFixed(2)}
+                        <em>MT</em>
+                      </>
+                    )}
+                  </span>
+
+                  <span className="ov-fig">
+                    {stock.pl2p.toFixed(2)}
                     <em>MT</em>
                   </span>
 
                   <span className="ov-note">
                     {stampFmt.format(l.expires)}
-                  </span>
-
-                  <span
-                    className={`ov-note ${expiryTone(l.daysLeft)}`}
-                  >
-                    {ageLabel(l.daysLeft)}
                   </span>
 
                   <span className="ov-note">{l.location}</span>

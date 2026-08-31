@@ -79,87 +79,42 @@ button {
   position: absolute;
   z-index: 3;
 
-  top: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
 
-  /*
-     Wider than the reading area because the leading third of it
-     is a fade. Solid ground begins around 78% across the window,
-     leaving the video legible over roughly the first two thirds.
-  */
-  width: 42%;
-
-  min-width: 440px;
-
-  /*
-     Anchored to the right rather than centred in the panel — the
-     panel's leading third is only a fade, so centring inside it
-     parked the form further left than it looked like it should.
-     Left padding stays small since that side is the fade.
-  */
-  padding:
-    40px
-    clamp(44px, 4.5vw, 96px)
-    40px
-    32px;
+  padding: 40px clamp(24px, 5vw, 72px);
 
   display: flex;
 
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
 
+  /*
+     Darkest under the card and easing off toward the corners, so
+     the form has solid ground while the video still shows at the
+     edges. The old scrim was a left-to-right fade because the form
+     sat in a right-hand strip; centred, that would have put the
+     heaviest part of the wash nowhere near the reading.
+  */
   background:
-    linear-gradient(
-      90deg,
-      rgba(9, 11, 13, 0) 0%,
-      rgba(9, 11, 13, 0.55) 14%,
-      rgba(9, 11, 13, 0.9) 32%,
-      rgba(9, 11, 13, 0.98) 50%,
-      #090b0d 68%
+    radial-gradient(
+      ellipse 64% 80% at 50% 50%,
+      rgba(9, 11, 13, 0.94) 0%,
+      rgba(9, 11, 13, 0.88) 45%,
+      rgba(9, 11, 13, 0.66) 100%
     );
 
-  transform: translateX(100%);
+  /*
+     Fades rather than sliding in. A centred panel that arrives from
+     one side has to travel the whole window to get there, and the
+     card carries its own entrance a beat later anyway.
+  */
+  opacity: 0;
 
-  transition:
-    transform 0.8s cubic-bezier(0.76, 0, 0.24, 1);
+  transition: opacity 0.7s ease;
 }
 
 .login-shell-open {
-  transform: translateX(0);
-}
-
-/*
-   Narrower windows leave the panel barely wider than the form, so
-   the form ends up sitting in the fade. Pulling the stops in keeps
-   solid ground under the text; the transition is shorter but the
-   part of it left visible beside the form still reads as a wash.
-*/
-@media (max-width: 1600px) {
-
-  .login-shell {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(9, 11, 13, 0) 0%,
-        rgba(9, 11, 13, 0.8) 9%,
-        rgba(9, 11, 13, 0.96) 20%,
-        #090b0d 32%
-      );
-  }
-}
-
-@media (max-width: 1150px) {
-
-  .login-shell {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(9, 11, 13, 0) 0%,
-        rgba(9, 11, 13, 0.93) 5%,
-        #090b0d 13%
-      );
-  }
+  opacity: 1;
 }
 
 .login-card {
@@ -6429,16 +6384,26 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Eight: MANUAL and PL2P are separate readings and get a column
+   each, because one QUANTITY column could only ever show one of
+   them and was silently switching between the two. */
 .ov-register .ov-row {
   grid-template-columns:
-    minmax(150px, 1.1fr)
-    76px
-    110px
-    110px
-    100px
-    minmax(130px, 1fr)
-    104px
-    132px;
+    minmax(146px, 1.1fr)
+    74px
+    98px
+    98px
+    116px
+    minmax(124px, 1fr)
+    106px
+    124px;
+}
+
+/* The em dash for an absent manual reading */
+.ov-fig s {
+  color: #6f767b;
+
+  text-decoration: none;
 }
 
 .ov-head {
@@ -8708,16 +8673,12 @@ button {
 
 @media (max-width: 900px) {
 
-  /* No room for a fade — the scrim covers the window instead */
+  /*
+     A flat scrim on a small window: the vignette needs room to fall
+     off, and at this width its light edge would sit under the form.
+  */
   .login-shell {
-    width: 100%;
-
-    min-width: 0;
-
     padding: 28px;
-
-    /* Full-width scrim has no fade to sit clear of, so re-centre */
-    justify-content: center;
 
     background:
       rgba(9, 11, 13, 0.92);
