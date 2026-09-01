@@ -6567,39 +6567,6 @@ button {
     #26292c;
 }
 
-.rows-per {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 9px;
-
-  font-size: 12px;
-
-  color: #9aa1a6;
-}
-
-.rows-per select {
-  height: 32px;
-
-  padding: 0 8px;
-
-  border:
-    1px solid
-    #3b3f42;
-
-  border-radius: 6px;
-
-  background-color: #131516;
-
-  color: #f2f2f2;
-
-  font-family: inherit;
-  font-size: 12px;
-
-  cursor: pointer;
-}
-
 .page-count {
   margin: 0;
 
@@ -6729,19 +6696,8 @@ button {
 }
 
 .dashboard-page.light-mode
-.rows-per,
-.dashboard-page.light-mode
 .page-count {
   color: #767676;
-}
-
-.dashboard-page.light-mode
-.rows-per select {
-  border-color: #d8d6d0;
-
-  background-color: #ffffff;
-
-  color: #171717;
 }
 
 .dashboard-page.light-mode

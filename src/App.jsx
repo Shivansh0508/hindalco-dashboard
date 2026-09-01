@@ -444,6 +444,11 @@ function lotPasses(lot, filter) {
 */
 const HORIZON_STOPS = [0, 7, 30, 90, 180, 365];
 
+/* Both registers page ten at a time. Fixed rather than chosen:
+   the control was one more thing to read on a table whose whole
+   job is to be scanned. */
+const PER_PAGE = 10;
+
 /* How far through its own shelf life a lot is, which is not the
    same question as how many days are left: 4 days remaining means
    something different on a 30-day product than on a 365-day one. */
@@ -1310,6 +1315,7 @@ function OverviewPanel({
 function AgeingRegister({ lots, onOpen }) {
   const [grade, setGrade] = useState("");
   const [find, setFind] = useState("");
+  const [page, setPage] = useState(1);
 
   const typed = find.trim().toLowerCase();
 
@@ -1323,6 +1329,30 @@ function AgeingRegister({ lots, onOpen }) {
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
   const qty = shown.reduce((s, l) => s + l.qty, 0);
+
+  const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE));
+
+  // Clamped: narrowing the filter can strand the stored page
+  const current = Math.min(page, pages);
+
+  const windowed = shown.slice(
+    (current - 1) * PER_PAGE,
+    current * PER_PAGE,
+  );
+
+  /*
+     Back to page one whenever the filtering changes, adjusted
+     during render rather than in an effect so the stale page is
+     never painted first.
+  */
+  const signature = [grade, typed].join("|");
+
+  const [lastSignature, setLastSignature] = useState(signature);
+
+  if (lastSignature !== signature) {
+    setLastSignature(signature);
+    setPage(1);
+  }
 
   return (
     <section className="exception-panel">
@@ -1388,7 +1418,7 @@ function AgeingRegister({ lots, onOpen }) {
             <span>LOCATION</span>
           </div>
 
-          {shown.map((l) => {
+          {windowed.map((l) => {
             const used = shelfUsed(l);
 
             return (
@@ -1444,6 +1474,42 @@ function AgeingRegister({ lots, onOpen }) {
           })}
         </div>
       </div>
+
+      {shown.length > 0 ? (
+        <div className="table-foot">
+          <p className="page-count">
+            Page <b>{current}</b> of <b>{pages}</b>
+            <em>
+              ({shown.length}{" "}
+              {shown.length === 1 ? "lot" : "lots"})
+            </em>
+          </p>
+
+          <div className="page-nav">
+            <button
+              type="button"
+              onClick={() => setPage(current - 1)}
+              disabled={current <= 1}
+            >
+              <svg viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 1 1.5 6 6 11" />
+              </svg>
+              Prev
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPage(current + 1)}
+              disabled={current >= pages}
+            >
+              Next
+              <svg viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M2 1 6.5 6 2 11" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -1466,7 +1532,6 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
   const [find, setFind] = useState("");
 
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
 
   const typed = find.trim().toLowerCase();
 
@@ -1497,7 +1562,7 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
     0,
   );
 
-  const pages = Math.max(1, Math.ceil(shown.length / perPage));
+  const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE));
 
   /*
      Clamped rather than trusted. Narrowing the filter can leave the
@@ -1507,8 +1572,8 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
   const current = Math.min(page, pages);
 
   const windowed = shown.slice(
-    (current - 1) * perPage,
-    current * perPage,
+    (current - 1) * PER_PAGE,
+    current * PER_PAGE,
   );
 
   /*
@@ -1525,7 +1590,6 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
     status,
     typed,
     filter?.label ?? "",
-    perPage,
   ].join("|");
 
   const [lastSignature, setLastSignature] = useState(signature);
@@ -1718,21 +1782,6 @@ function LotRegister({ lots, filter, onClear, onOpen, panelRef }) {
 
       {shown.length > 0 ? (
         <div className="table-foot">
-          <label className="rows-per">
-            Rows per page:
-            <select
-              value={perPage}
-              onChange={(e) => setPerPage(Number(e.target.value))}
-              aria-label="Rows per page"
-            >
-              {[10, 25, 50].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <p className="page-count">
             Page <b>{current}</b> of <b>{pages}</b>
             <em>
@@ -4151,6 +4200,7 @@ function Dashboard({ onSignOut, operator }) {
                 </div>
               )}
             </section>
+
           )}
 
           {activeTab === "Age Analysis" ? (
