@@ -1515,6 +1515,297 @@ function AgeingRegister({ lots, onOpen }) {
 }
 
 /*
+   Deducted in this order, each lot counted once. Order matters:
+   a lot that is both expired and rejected must not be subtracted
+   twice, or the steps stop summing to the book figure and the
+   whole thing is just decoration.
+*/
+const WATERFALL_STEPS = [
+  {
+    key: "missing",
+    label: "Not in manual register",
+    note: "PL2P has it, the register does not",
+    test: (l) => l.check === "PL2P only",
+  },
+  {
+    key: "expired",
+    label: "Past expiry",
+    note: "shelf life already gone",
+    test: (l) => l.daysLeft < 0,
+  },
+  {
+    key: "held",
+    label: "Held by quality",
+    note: "not cleared for dispatch",
+    test: (l) => l.quality !== "Accept",
+  },
+];
+
+function buildWaterfall(lots) {
+  const book = lots.reduce(
+    (s, l) => s + reconcile(l).pl2p,
+    0,
+  );
+
+  const taken = new Set();
+
+  const steps = WATERFALL_STEPS.map((step) => {
+    const hit = lots.filter(
+      (l) => !taken.has(l.id) && step.test(l),
+    );
+
+    hit.forEach((l) => taken.add(l.id));
+
+    return {
+      ...step,
+      lots: hit.length,
+      qty: hit.reduce((s, l) => s + reconcile(l).pl2p, 0),
+    };
+  });
+
+  /*
+     What is left is shippable, but the quantity the two feeds
+     disagree on is not — so only the delta comes off, not the lot.
+  */
+  const rest = lots.filter((l) => !taken.has(l.id));
+
+  steps.push({
+    key: "disputed",
+    label: "Disputed quantity",
+    note: "the delta only, not the lot",
+    lots: rest.filter((l) => reconcile(l).diff !== 0).length,
+    qty: rest.reduce(
+      (s, l) => s + Math.abs(reconcile(l).diff),
+      0,
+    ),
+  });
+
+  const off = steps.reduce((s, x) => s + x.qty, 0);
+
+  return { book, steps, shippable: book - off, ready: rest.length };
+}
+
+/* Module D — of everything on the books, what can actually move */
+function AvailabilityWaterfall({ lots }) {
+  const { book, steps, shippable, ready } = buildWaterfall(lots);
+
+  return (
+    <section className="exception-panel">
+      <div className="panel-header">
+        <div>
+          <p className="panel-label">LIVE STOCK</p>
+          <h2>What can actually ship</h2>
+        </div>
+
+        <span className="panel-side">
+          from {book.toFixed(2)} MT on the books
+        </span>
+      </div>
+
+      <div className="fall">
+        {steps.map((s) => (
+          <div className="fall-row" key={s.key}>
+            <span className="fall-label">
+              {s.label}
+              <em>{s.note}</em>
+            </span>
+
+            <span className="fall-track">
+              <i
+                style={{
+                  "--w": `${
+                    book ? (s.qty / book) * 100 : 0
+                  }%`,
+                }}
+              />
+            </span>
+
+            <span className="fall-lots">
+              {s.lots} {s.lots === 1 ? "lot" : "lots"}
+            </span>
+
+            <span
+              className={`fall-qty ${
+                s.qty === 0 ? "fall-nil" : ""
+              }`}
+            >
+              −{s.qty.toFixed(2)}
+              <em>MT</em>
+            </span>
+          </div>
+        ))}
+
+        <div className="fall-out">
+          <div>
+            <p className="record-cap">SHIPPABLE TODAY</p>
+
+            <strong>
+              {shippable.toFixed(2)}
+              <em>MT</em>
+            </strong>
+          </div>
+
+          <p className="fall-note">
+            {ready} of {lots.length} lots, {" "}
+            {book ? ((shippable / book) * 100).toFixed(1) : "0"}% of
+            the book figure
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/*
+   No first-seen timestamp in the data, so the age of a gap is
+   derived from the lot id: deterministic, and stable across
+   renders, but a stand-in. Point this at a real first-seen column
+   as soon as the feed carries one.
+*/
+function gapAge(lot) {
+  return 1 + (lotHash(lot.id) % 6);
+}
+
+/* Module D — how far the two feeds have drifted, and for how long */
+function FeedSyncMonitor({ feeds, now, lots }) {
+  const gaps = lots
+    .filter((l) => l.check === "PL2P only")
+    .map((l) => ({ ...l, days: gapAge(l) }))
+    .sort((a, b) => b.days - a.days);
+
+  return (
+    <div className="panel">
+      <div className="panel-header">
+        <div>
+          <p className="panel-label">RECONCILIATION</p>
+          <h2>Feed sync</h2>
+        </div>
+      </div>
+
+      <div className="sync-list">
+        {feeds.map((feed) => (
+          <div
+            className={`sync-row ${freshnessOf(feed.at, now)}`}
+            key={feed.id}
+          >
+            <span className="sync-name">
+              <i />
+              {feed.label}
+            </span>
+
+            <span className="sync-when">
+              {relativeAge(feed.at, now)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <p className="sync-head">
+        {gaps.length
+          ? `${gaps.length} lots waiting on the manual register`
+          : "Both feeds agree on every lot"}
+      </p>
+
+      {gaps.map((l) => (
+        <div className="sync-gap" key={l.id}>
+          <span className="sync-lot">{l.id}</span>
+
+          <span className="sync-qty">
+            {l.qty.toFixed(2)}
+            <em>MT</em>
+          </span>
+
+          <span className="sync-age">
+            open {l.days}d
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/*
+   Module D — the two registers side by side with the matches drawn
+   across. A table of differences tells you the same facts; this
+   makes the gaps the first thing you see rather than a column you
+   have to read.
+*/
+function RegisterLedger({ lots, onOpen }) {
+  const rows = lots
+    .map((l) => ({ ...l, stock: reconcile(l) }))
+    .sort((a, b) => Math.abs(b.stock.diff) - Math.abs(a.stock.diff));
+
+  return (
+    <section className="exception-panel">
+      <div className="panel-header">
+        <div>
+          <p className="panel-label">LIVE STOCK</p>
+          <h2>Two registers, side by side</h2>
+        </div>
+
+        <span className="panel-side">
+          {rows.filter((r) => r.stock.diff === 0).length} of{" "}
+          {rows.length} agree
+        </span>
+      </div>
+
+      <div className="ledger">
+        <div className="ledger-head">
+          <span>MANUAL REGISTER</span>
+          <span />
+          <span>PL2P PRODUCTION</span>
+        </div>
+
+        {rows.map((r) => {
+          const state =
+            r.stock.manual === 0
+              ? "link-missing"
+              : r.stock.diff === 0
+                ? "link-match"
+                : "link-off";
+
+          return (
+            <button
+              type="button"
+              className="ledger-row"
+              key={r.id}
+              onClick={() => onOpen(r)}
+              title="Open the full record for this lot"
+            >
+              <span className="ledger-side">
+                {r.stock.manual === 0 ? (
+                  <s>not recorded</s>
+                ) : (
+                  <>
+                    <b>{r.id}</b>
+                    <em>{r.stock.manual.toFixed(2)} MT</em>
+                  </>
+                )}
+              </span>
+
+              <span className={`ledger-link ${state}`}>
+                <i />
+                {r.stock.diff === 0 ? null : (
+                  <u>
+                    {r.stock.diff > 0 ? "+" : ""}
+                    {r.stock.diff.toFixed(2)}
+                  </u>
+                )}
+              </span>
+
+              <span className="ledger-side ledger-right">
+                <b>{r.id}</b>
+                <em>{r.stock.pl2p.toFixed(2)} MT</em>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/*
    The register the brief actually asks for: every lot with every
    field it lists, at lot level rather than grade level. This is what
    the KPIs, the reconciliation rings and the two tables above all
@@ -4220,6 +4511,20 @@ function Dashboard({ onSignOut, operator }) {
             </section>
 
             <AgeingRegister lots={allLots} onOpen={openRecord} />
+          </>
+          ) : activeTab === "Live Stock" ? (
+          <>
+            <section className="dashboard-panels panels-wide-first">
+              <AvailabilityWaterfall lots={allLots} />
+
+              <FeedSyncMonitor
+                feeds={syncFeeds}
+                now={now}
+                lots={allLots}
+              />
+            </section>
+
+            <RegisterLedger lots={allLots} onOpen={openRecord} />
           </>
           ) : tabContent[activeTab] ? (
             <section className="dashboard-panels" key={activeTab}>
