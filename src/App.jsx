@@ -2933,7 +2933,13 @@ function Header({
           title="Back to the sign-in screen"
         >
           <img
-            src="/aditya-birla-hindalco.png"
+            /*
+               Versioned because this lives in public/, which Vite
+               copies verbatim rather than hashing. Overwriting the
+               file alone leaves browsers serving the cached one.
+               Bump the number whenever the artwork changes.
+            */
+            src="/aditya-birla-hindalco.png?v=2"
             alt="Aditya Birla Group"
           />
 
