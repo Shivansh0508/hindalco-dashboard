@@ -665,7 +665,13 @@ button {
 ========================================================= */
 
 .abg-logo {
-  width: 175px;
+  /*
+     Sized for a square mark. The old slot was 175x104, cut for a
+     wide wordmark — a square logo in a 1.95:1 box can only ever be
+     as tall as the box, so most of that width was wasted and the
+     logo rendered small to fill it.
+  */
+  width: 118px;
   height: 104px;
 
   flex-shrink: 0;
@@ -694,8 +700,9 @@ button {
 .abg-logo img {
   display: block;
 
-  width: 152px;
-  height: 78px;
+  /* 86 + 3 gap + the HOME hint clears the 104px header */
+  width: 86px;
+  height: 86px;
 
   max-width: 100%;
   max-height: 100%;
@@ -1317,11 +1324,14 @@ button {
   top: 0;
   left: 0;
 
-  width: 94px;
-  height: 62px;
+  /*
+     Squarer than before, to match the mark. It is also narrower,
+     which is free relief on the content underneath — this tab is
+     fixed, so whatever it spans it covers.
+  */
+  width: 78px;
+  height: 74px;
 
-  /* The source no longer carries 151px of its own whitespace, so
-     the card does not need to add much either. */
   padding: 5px;
 
   display: flex;

@@ -2933,7 +2933,7 @@ function Header({
           title="Back to the sign-in screen"
         >
           <img
-            src="/aditya-birla-group.png"
+            src="/aditya-birla-hindalco.png"
             alt="Aditya Birla Group"
           />
 
