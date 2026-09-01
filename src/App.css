@@ -6652,8 +6652,584 @@ button {
 
 
 /* =========================================================
+   LIVE STOCK
+
+   A waterfall from the book figure down to what can ship, the two
+   registers drawn side by side, and how far the feeds have drifted.
+========================================================= */
+
+.fall {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.fall-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(190px, 1.1fr)
+    minmax(120px, 1fr)
+    72px
+    116px;
+
+  align-items: center;
+
+  gap: 16px;
+
+  min-height: 52px;
+
+  padding: 0 4px;
+
+  border-bottom:
+    1px solid
+    #26292c;
+}
+
+.fall-label {
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #e8e8e8;
+}
+
+.fall-label em {
+  display: block;
+
+  margin-top: 3px;
+
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 500;
+
+  color: #858b8f;
+}
+
+.fall-track {
+  height: 6px;
+
+  border-radius: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.06);
+
+  overflow: hidden;
+}
+
+.fall-track i {
+  display: block;
+
+  width: var(--w, 0%);
+  height: 100%;
+
+  border-radius: 3px;
+
+  background: #e35b55;
+}
+
+.fall-lots {
+  font-size: 11px;
+
+  text-align: right;
+
+  color: #858b8f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.fall-qty {
+  font-size: 14px;
+  font-weight: 700;
+
+  text-align: right;
+
+  color: #f0908f;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.fall-qty em {
+  margin-left: 4px;
+
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+/* Nothing came off at this step; say so quietly rather than in red */
+.fall-nil {
+  color: #6f767b;
+}
+
+.fall-out {
+  display: flex;
+
+  align-items: baseline;
+
+  justify-content: space-between;
+
+  flex-wrap: wrap;
+
+  gap: 14px;
+
+  margin-top: 18px;
+
+  padding-top: 18px;
+
+  border-top:
+    1px solid
+    #3a3f43;
+}
+
+.fall-out strong {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 34px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  color: #2fd39b;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.fall-out strong em {
+  margin-left: 8px;
+
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #858b8f;
+}
+
+.fall-note {
+  margin: 0;
+
+  font-size: 12px;
+
+  color: #9aa1a6;
+}
+
+/* ---- feed sync ---- */
+
+.sync-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+
+  margin-bottom: 18px;
+}
+
+.sync-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 10px 12px;
+
+  border-radius: 6px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+}
+
+.sync-name {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 1.1px;
+
+  color: #d7d9da;
+}
+
+.sync-name i {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #39b975;
+}
+
+.sync-aging .sync-name i {
+  background: #e1b43a;
+}
+
+.sync-stale .sync-name i {
+  background: #e15c55;
+}
+
+.sync-when {
+  font-size: 11px;
+
+  color: #858b8f;
+}
+
+.sync-head {
+  margin: 0 0 10px;
+
+  font-size: 12px;
+
+  color: #9aa1a6;
+}
+
+.sync-gap {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    auto
+    auto;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 9px 2px;
+
+  border-top:
+    1px solid
+    #26292c;
+}
+
+.sync-lot {
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #e8e8e8;
+}
+
+.sync-qty {
+  font-size: 12px;
+
+  color: #b9c0c5;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-qty em {
+  margin-left: 3px;
+
+  font-style: normal;
+  font-size: 10px;
+
+  color: #858b8f;
+}
+
+.sync-age {
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #f0908f;
+}
+
+/* ---- the two registers ---- */
+
+.ledger {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.ledger-head,
+.ledger-row {
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    132px
+    1fr;
+
+  align-items: center;
+
+  gap: 0;
+}
+
+.ledger-head {
+  padding-bottom: 12px;
+
+  border-bottom:
+    1px solid
+    #2b2e30;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  color: #858b8f;
+}
+
+.ledger-head span:last-child {
+  text-align: right;
+}
+
+.ledger-row {
+  min-height: 54px;
+
+  padding: 0;
+
+  border: none;
+
+  border-bottom:
+    1px solid
+    #26292c;
+
+  background: transparent;
+
+  font-family: inherit;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.16s ease;
+}
+
+.ledger-row:hover {
+  background-color:
+    rgba(226, 184, 59, 0.11);
+}
+
+.ledger-side b {
+  display: block;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #f2f2f2;
+}
+
+.ledger-side em {
+  display: block;
+
+  margin-top: 3px;
+
+  font-style: normal;
+  font-size: 12px;
+
+  color: #b9c0c5;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-side s {
+  font-size: 12px;
+
+  color: #6f767b;
+
+  text-decoration: none;
+}
+
+.ledger-right {
+  text-align: right;
+}
+
+/*
+   The join between the two sides. A solid rule where the feeds
+   agree, a broken one where they do not, and nothing at all where
+   one side never saw the lot — so the gaps read as gaps.
+*/
+.ledger-link {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  height: 100%;
+}
+
+.ledger-link i {
+  position: absolute;
+
+  left: 8px;
+  right: 8px;
+
+  height: 2px;
+
+  border-radius: 1px;
+}
+
+.link-match i {
+  background: #2fd39b;
+}
+
+.link-off i {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #e2b83b 0px,
+      #e2b83b 5px,
+      transparent 5px,
+      transparent 10px
+    );
+}
+
+.link-missing i {
+  left: 50%;
+
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #e34948 0px,
+      #e34948 3px,
+      transparent 3px,
+      transparent 8px
+    );
+}
+
+.ledger-link u {
+  position: relative;
+
+  padding: 2px 7px;
+
+  border-radius: 3px;
+
+  background: #181a1c;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #e6c877;
+
+  text-decoration: none;
+
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* =========================================================
    LIGHT MODE
 ========================================================= */
+.dashboard-page.light-mode
+.fall-row,
+.dashboard-page.light-mode
+.sync-gap,
+.dashboard-page.light-mode
+.ledger-row {
+  border-bottom-color: #efeeea;
+}
+
+.dashboard-page.light-mode
+.fall-label,
+.dashboard-page.light-mode
+.sync-lot,
+.dashboard-page.light-mode
+.ledger-side b {
+  color: #171717;
+}
+
+.dashboard-page.light-mode
+.fall-label em,
+.dashboard-page.light-mode
+.fall-lots,
+.dashboard-page.light-mode
+.fall-qty em,
+.dashboard-page.light-mode
+.sync-when,
+.dashboard-page.light-mode
+.sync-qty em {
+  color: #767676;
+}
+
+.dashboard-page.light-mode
+.fall-track {
+  background: #eceae5;
+}
+
+.dashboard-page.light-mode
+.fall-qty {
+  color: #a52c28;
+}
+
+.dashboard-page.light-mode
+.fall-nil {
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.fall-out {
+  border-top-color: #e5e5e1;
+}
+
+.dashboard-page.light-mode
+.fall-out strong {
+  color: #12784f;
+}
+
+.dashboard-page.light-mode
+.fall-note,
+.dashboard-page.light-mode
+.sync-head {
+  color: #55595c;
+}
+
+.dashboard-page.light-mode
+.sync-row {
+  background: #f4f4f1;
+}
+
+.dashboard-page.light-mode
+.sync-name {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.sync-age {
+  color: #a52c28;
+}
+
+.dashboard-page.light-mode
+.sync-qty,
+.dashboard-page.light-mode
+.ledger-side em {
+  color: #333333;
+}
+
+.dashboard-page.light-mode
+.ledger-head {
+  border-bottom-color: #e8e6e1;
+
+  color: #8e8e8e;
+}
+
+.dashboard-page.light-mode
+.ledger-row:hover {
+  background-color:
+    rgba(146, 113, 39, 0.13);
+}
+
+.dashboard-page.light-mode
+.ledger-link u {
+  background: #ffffff;
+
+  color: #74591e;
+}
+
 .dashboard-page.light-mode
 .ov-head {
   border-bottom-color: #e8e6e1;
